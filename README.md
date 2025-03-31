@@ -29,9 +29,7 @@ This is how you import the library through the repository.
       cheatname = 'Menu Library',
       gamename = 'Unknown',
       fileext = '.cfg',
-      logo = '140593867166824',
-      icon = '140593867166824',
-      Accent = Color3.fromRGB(79, 155, 255)
+      Accent = Color3.fromRGB(172, 84, 255)
   })
   ```
 
@@ -39,14 +37,13 @@ This is how you import the library through the repository.
 
 * Window
   ```lua
-  local Window = Library:New({Size = UDim2.new(0, 600, 0, 500)})
+  local Window = Library:Window()
   ```
 
 * Tab
   ```lua
   local Tab = Window:Page({
-      Name = 'Tab',
-      Icon = 'http://www.roblox.com/asset/?id=6023426921'
+      Name = 'Tab'
   })
   ```
 
@@ -54,14 +51,9 @@ This is how you import the library through the repository.
   ```lua
   local Section = Tab:Section({
       Name = 'Section',
-      Side = 'Left',
-      Size = 427
+      LeftTitle = 'Left',
+      RightTitle = 'Right'
   })
-  ```
-
-* Seperator
-  ```lua
-  Window:Seperator({Name = 'Seperator'})
   ```
 
 * Toggle:

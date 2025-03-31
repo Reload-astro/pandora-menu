@@ -16,6 +16,8 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VoiceChatService = game:GetService("VoiceChatService")
+local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 
 local Library = {
@@ -32,6 +34,7 @@ local Library = {
 	Instances = {},
 	Connections = {},
 	Drawings = {},
+	Notifications = {},
 	ScreenGUI = nil,
 	Folder = nil,
 	Holder = nil,
@@ -87,6 +90,7 @@ local Library = {
 		[Enum.UserInputType.MouseButton2] = "MB2",
 		[Enum.UserInputType.MouseButton3] = "MB3"
 	},
+	UIKey = Enum.KeyCode.RightShift,
 	UIFont = nil,
 	FontSize = 12
 }
@@ -127,7 +131,7 @@ if not isfile(Library.cheatname..'/'..Library.gamename.."/assets/main_encoded.tt
 	writefile(Library.cheatname..'/'..Library.gamename.."/assets/main_encoded.ttf", HttpService:JSONEncode(tahoma))
 end 
 
-Library.Font = Font.new(getcustomasset(Library.cheatname..'/'..Library.gamename.."/assets/main_encoded.ttf"), Enum.FontWeight.Regular)
+Library.UIFont = Font.new(getcustomasset(Library.cheatname..'/'..Library.gamename.."/assets/main_encoded.ttf"), Enum.FontWeight.Regular)
 
 -- // Ignores
 local Flags = {} -- Ignore
@@ -139,6 +143,12 @@ local VisValues = {} -- Ignore
 Library.__index = Library
 Library.Pages.__index = Library.Pages
 Library.Sections.__index = Library.Sections
+
+if not PlayerGui:FindFirstChild("Menu") then
+	Library.Folder = Instance.new("Folder")
+	Library.Folder.Name = "Menu"
+	Library.Folder.Parent = PlayerGui
+end
 
 -- // Misc Functions
 do
@@ -228,112 +238,156 @@ do
 		end)
 	end
 	--
-	function Library:GetConfig()
-		local Config = ""
-		for Index, Value in pairs(self.Flags) do
-			if
-				Index ~= "ConfigConfig_List"
-				and Index ~= "ConfigConfig_Load"
-				and Index ~= "ConfigConfig_Save"
-			then
-				local Value2 = Value
-				local Final = ""
-				--
-				if typeof(Value2) == "Color3" then
-					local hue, sat, val = Value2:ToHSV()
-					--
-					Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, 1)
-				elseif typeof(Value2) == "table" and Value2.Color and Value2.Transparency then
-					local hue, sat, val = Value2.Color:ToHSV()
-					--
-					Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, Value2.Transparency)
-				elseif typeof(Value2) == "table" and Value.Mode then
-					local Values = Value.current
-					--
-					Final = ("key(%s,%s,%s)"):format(Values[1] or "nil", Values[2] or "nil", Value.Mode)
-				elseif Value2 ~= nil then
-					if typeof(Value2) == "boolean" then
-						Value2 = ("bool(%s)"):format(tostring(Value2))
-					elseif typeof(Value2) == "table" then
-						local New = "table("
-						--
-						for Index2, Value3 in pairs(Value2) do
-							New = New .. Value3 .. ","
-						end
-						--
-						if New:sub(#New) == "," then
-							New = New:sub(0, #New - 1)
-						end
-						--
-						Value2 = New .. ")"
-					elseif typeof(Value2) == "string" then
-						Value2 = ("string(%s)"):format(Value2)
-					elseif typeof(Value2) == "number" then
-						Value2 = ("number(%s)"):format(Value2)
-					end
-					--
-					Final = Value2
-				end
-				--
-				Config = Config .. Index .. ": " .. tostring(Final) .. "\n"
+	function Library:GetConfigs()
+		local list = {};
+
+		for _, v in next, listfiles(Library.cheatname..'/'..Library.gamename..'/configs') do
+			local name = v:match("([^\\/]+)%..+$")
+			if name and v:sub(-#Library.fileext) == Library.fileext then
+				list[#list + 1] = name
 			end
 		end
-		--
-		return Config
+		return list
 	end
 	--
-	function Library:LoadConfig(Config)
-		local Table = string.split(Config, "\n")
-		local Table2 = {}
-		for Index, Value in pairs(Table) do
-			local Table3 = string.split(Value, ":")
-			--
-			if Table3[1] ~= "ConfigConfig_List" and #Table3 >= 2 then
-				local Value = Table3[2]:sub(2, #Table3[2])
+	function Library:GetConfig(name)
+		if isfile(Library.cheatname..'/'..Library.gamename..'/configs/'..name..Library.fileext) then
+			return readfile(Library.cheatname..'/'..Library.gamename..'/configs/'..name..Library.fileext);
+		end
+	end
+	--
+	function Library:LoadConfig(name) 
+		local cfg = Library:GetConfig(name)
+		if not cfg then
+			Library:Notification('Error loading config: Config does not exist. ('..tostring(name)..')', 5)
+			return
+		end
+
+		local s,e = pcall(function()
+			local Table = string.split(cfg, "\n")
+			local Table2 = {}
+			for Index, Value in pairs(Table) do
+				local Table3 = string.split(Value, ":")
 				--
-				if Value:sub(1, 3) == "rgb" then
-					local Table4 = string.split(Value:sub(5, #Value - 1), ",")
+				if Table3[1] ~= "ConfigConfig_List" and #Table3 >= 2 then
+					local Value = Table3[2]:sub(2, #Table3[2])
 					--
-					Value = Table4
-				elseif Value:sub(1, 3) == "key" then
-					local Table4 = string.split(Value:sub(5, #Value - 1), ",")
-					--
-					if Table4[1] == "nil" and Table4[2] == "nil" then
-						Table4[1] = nil
-						Table4[2] = nil
+					if Value:sub(1, 3) == "rgb" then
+						local Table4 = string.split(Value:sub(5, #Value - 1), ",")
+						--
+						Value = Table4
+					elseif Value:sub(1, 3) == "key" then
+						local Table4 = string.split(Value:sub(5, #Value - 1), ",")
+						--
+						if Table4[1] == "nil" and Table4[2] == "nil" then
+							Table4[1] = nil
+							Table4[2] = nil
+						end
+						--
+						Value = Table4
+					elseif Value:sub(1, 4) == "bool" then
+						local Bool = Value:sub(6, #Value - 1)
+						--
+						Value = Bool == "true"
+					elseif Value:sub(1, 5) == "table" then
+						local Table4 = string.split(Value:sub(7, #Value - 1), ",")
+						--
+						Value = Table4
+					elseif Value:sub(1, 6) == "string" then
+						local String = Value:sub(8, #Value - 1)
+						--
+						Value = String
+					elseif Value:sub(1, 6) == "number" then
+						local Number = tonumber(Value:sub(8, #Value - 1))
+						--
+						Value = Number
 					end
 					--
-					Value = Table4
-				elseif Value:sub(1, 4) == "bool" then
-					local Bool = Value:sub(6, #Value - 1)
-					--
-					Value = Bool == "true"
-				elseif Value:sub(1, 5) == "table" then
-					local Table4 = string.split(Value:sub(7, #Value - 1), ",")
-					--
-					Value = Table4
-				elseif Value:sub(1, 6) == "string" then
-					local String = Value:sub(8, #Value - 1)
-					--
-					Value = String
-				elseif Value:sub(1, 6) == "number" then
-					local Number = tonumber(Value:sub(8, #Value - 1))
-					--
-					Value = Number
+					Table2[Table3[1]] = Value
 				end
-				--
-				Table2[Table3[1]] = Value
 			end
+
+			for i, v in pairs(Table2) do
+				if Flags[i] then
+					if typeof(Flags[i]) == "table" then
+						Flags[i]:Set(v)
+					else
+						Flags[i](v)
+					end
+				end
+			end
+		end)
+
+		if s then
+			Library:Notification('Successfully loaded config: '..name, 5)
+		else
+			Library:Notification('Error loading config: '..tostring(e)..'. ('..tostring(name)..')', 5)
 		end
-		--
-		for i, v in pairs(Table2) do
-			if Flags[i] then
-				if typeof(Flags[i]) == "table" then
-					Flags[i]:Set(v)
-				else
-					Flags[i](v)
+	end
+	--
+	function Library:SaveConfig(name)
+		if not Library:GetConfig(name) then
+			Library:Notification('Error saving config: Config does not exist. ('..tostring(name)..')', 5)
+			return
+		end
+
+		local s,e = pcall(function()
+			local Config = ""
+			for Index, Value in pairs(self.Flags) do
+				if
+					Index ~= "ConfigConfig_List"
+					and Index ~= "ConfigConfig_Load"
+					and Index ~= "ConfigConfig_Save"
+				then
+					local Value2 = Value
+					local Final = ""
+					--
+					if typeof(Value2) == "Color3" then
+						local hue, sat, val = Value2:ToHSV()
+						--
+						Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, 1)
+					elseif typeof(Value2) == "table" and Value2.Color and Value2.Transparency then
+						local hue, sat, val = Value2.Color:ToHSV()
+						--
+						Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, Value2.Transparency)
+					elseif typeof(Value2) == "table" and Value.Mode then
+						local Values = Value.current
+						--
+						Final = ("key(%s,%s,%s)"):format(Values[1] or "nil", Values[2] or "nil", Value.Mode)
+					elseif Value2 ~= nil then
+						if typeof(Value2) == "boolean" then
+							Value2 = ("bool(%s)"):format(tostring(Value2))
+						elseif typeof(Value2) == "table" then
+							local New = "table("
+							--
+							for Index2, Value3 in pairs(Value2) do
+								New = New .. Value3 .. ","
+							end
+							--
+							if New:sub(#New) == "," then
+								New = New:sub(0, #New - 1)
+							end
+							--
+							Value2 = New .. ")"
+						elseif typeof(Value2) == "string" then
+							Value2 = ("string(%s)"):format(Value2)
+						elseif typeof(Value2) == "number" then
+							Value2 = ("number(%s)"):format(Value2)
+						end
+						--
+						Final = Value2
+					end
+					--
+					Config = Config .. Index .. ": " .. tostring(Final) .. "\n"
 				end
 			end
+			writefile(Library.cheatname..'/'..Library.gamename..'/configs/'..name..Library.fileext, HttpService:JSONEncode(Config))
+		end)
+
+		if s then
+			Library:Notification('Successfully saved config: '..name, 5)
+		else
+			Library:Notification('Error saving config: '..tostring(e)..'. ('..tostring(name)..')', 5)
 		end
 	end
 	--
@@ -394,6 +448,16 @@ do
 				theme.BackgroundColor3 = Color
 			elseif theme:IsA("TextLabel") then
 				theme.TextColor3 = Color
+			elseif theme:IsA("ImageLabel") then
+				theme.ImageColor3 = Library.Accent
+			elseif theme:IsA("ScrollingFrame") then
+				theme.ScrollBarImageColor3 = Library.Accent
+			elseif theme:IsA("UIGradient") then
+				theme.Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+					ColorSequenceKeypoint.new(0.01, Library.Accent),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+				}
 			end
 		end
 
@@ -624,13 +688,139 @@ do
 	local Pages = Library.Pages
 	local Sections = Library.Sections
 	--
+	function Library:UpdateNotifications(position)
+		for i, v in pairs(Library.Notifications) do 
+			local Position = Vector2.new(20, 20)
+			TweenService:Create(v.Container, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0,Position.X,0,Position.Y + (i * 25))}):Play()
+		end 
+	end
+	--
+	function Library:Notification(message, duration)
+		local notification = {Container = nil, Objects = {}}
+		--
+		local Position = Vector2.new(20, 20)
+		--
+		local NewInd = Instance.new("Frame")
+		NewInd.Name = "NewInd"
+		NewInd.AutomaticSize = Enum.AutomaticSize.X
+		NewInd.Position = UDim2.new(0,20,0,20)
+		NewInd.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		NewInd.BackgroundTransparency = 1
+		NewInd.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		NewInd.Size = UDim2.fromOffset(0, 20)
+		NewInd.Parent = Library.ScreenGUI
+		notification.Container = NewInd
+		--
+		local Outline = Instance.new("Frame")
+		Outline.Name = "Outline"
+		Outline.AnchorPoint = Vector2.new(0, 0)
+		Outline.AutomaticSize = Enum.AutomaticSize.X
+		Outline.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		Outline.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Outline.BorderSizePixel = 1
+		Outline.Position = UDim2.new(0,0,0,0)
+		Outline.Size = UDim2.fromOffset(0, 20)
+		Outline.Visible = true
+		Outline.ZIndex = 50
+		Outline.Parent = NewInd
+		Outline.BackgroundTransparency = 1
+		--
+		local UICorner = Instance.new("UICorner")
+		UICorner.Name = "UICorner"
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = Outline
+		--
+		local UIStroke = Instance.new("UIStroke")
+		UIStroke.Name = "UIStroke"
+		UIStroke.Parent = Outline
+		UIStroke.Transparency = 1
+		--
+		local Inline = Instance.new("Frame")
+		Inline.Name = "Inline"
+		Inline.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
+		Inline.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Inline.BorderSizePixel = 0
+		Inline.Position = UDim2.fromOffset(1, 1)
+		Inline.Size = UDim2.new(1, -2, 1, -2)
+		Inline.ZIndex = 51
+		Inline.BackgroundTransparency = 1
+		--
+		local UICorner2 = Instance.new("UICorner")
+		UICorner2.Name = "UICorner_2"
+		UICorner2.CornerRadius = UDim.new(0, 4)
+		UICorner2.Parent = Inline
+		--
+		local Title = Instance.new("TextLabel")
+		Title.Name = "Title"
+		Title.FontFace = Library.Font
+		Title.RichText = true
+		Title.Text = message
+		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Title.TextSize = 13
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		Title.AutomaticSize = Enum.AutomaticSize.X
+		Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Title.BackgroundTransparency = 1
+		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Title.BorderSizePixel = 0
+		Title.Position = UDim2.fromOffset(5, 0)
+		Title.Size = UDim2.fromScale(0, 1)
+		Title.Parent = Inline
+		Title.TextTransparency = 1
+		--
+		local UIPadding = Instance.new("UIPadding")
+		UIPadding.Name = "UIPadding"
+		UIPadding.PaddingRight = UDim.new(0, 6)
+		UIPadding.Parent = Inline
+		--
+		Inline.Parent = Outline
+		--
+		function notification:remove()
+			table.remove(Library.Notifications, table.find(Library.Notifications, notification))
+			Library:UpdateNotifications(Position)
+			task.wait(0.5)
+			NewInd:Destroy()
+		end
+		--
+		task.spawn(function()
+			Outline.AnchorPoint = Vector2.new(1,0)
+			for i,v in next, NewInd:GetDescendants() do
+				if v:IsA("Frame") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+				elseif v:IsA("UIStroke") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+				end
+			end
+			local Tween1 = TweenService:Create(Outline, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {AnchorPoint = Vector2.new(0,0)}):Play()
+			TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+			task.wait(duration)
+			for i,v in next, NewInd:GetDescendants() do
+				if v:IsA("Frame") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+				elseif v:IsA("UIStroke") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 1}):Play()
+				end
+			end
+			TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+		end)
+		--
+		task.delay(duration + 0.1, function()
+			notification:remove()
+		end)
+		--
+		table.insert(Library.Notifications, notification)
+		Library:UpdateNotifications(Position)
+		NewInd.Position = UDim2.new(0,Position.X,0,Position.Y + (table.find(Library.Notifications, notification) * 25))
+		return notification
+	end
+	--
 	function Library:Window(Options)
 		local Base = {
 			Pages = {},
 			Sections = {},
 			Elements = {},
 			Dragging = { false, UDim2.new(0, 0, 0, 0) },
-			Title = Options.Name or Options.Name or Options.Name or "new ui"
+			Title = Library.cheatname.. ' ['..Library.gamename..']'
 		}
 
 		-- // Instances
@@ -803,10 +993,12 @@ do
 			Base.Dragging[2] =
 				UDim2.new(0, Location.X - Main.AbsolutePosition.X, 0, Location.Y - Main.AbsolutePosition.Y)
 		end)
+
 		Library:Connection(Top.MouseButton1Up, function()
 			Base.Dragging[1] = false
 			Base.Dragging[2] = UDim2.new(0, 0, 0, 0)
 		end)
+
 		Library:Connection(UserInputService.InputChanged, function(Input)
 			local Location = UserInputService:GetMouseLocation()
 			local ActualLocation = nil
@@ -822,6 +1014,12 @@ do
 			end
 		end)
 
+		Library:Connection(UserInputService.InputBegan, function(Inp)
+			if Inp.KeyCode == Library.UIKey then
+				Library:SetOpen(not Library.Open)
+			end
+		end)
+
 		-- // Return
 		Base.Elements = {Main = Main, Title = Title, Middle = Middle, PageHolder = Pages, SectionHolder = Sections}
 		return setmetatable(Base, Library)
@@ -833,7 +1031,7 @@ do
 			Open = false,
 			Sections = {},
 			Elements = {},
-			Title = Options.Name or Options.Name or Options.Name or "legit"
+			Title = Options.Name or Options.Name or Options.Name or "Page"
 		}
 
 		-- // Instances
@@ -2819,6 +3017,164 @@ do
 		return Textbox
 	end
 	--
+	function Library:Panel(Properties)
+		if Library.__panel == true then return end
+	
+		Library.__panel = true 
+	
+		local Panel = {
+			Name = Properties.name or Properties.Name or "Are you sure?", 
+			Options = Properties.options or Properties.Options or {"Confirm", "Discard"},
+			Callback = Properties.callback or Properties.Callback or function() end, 
+		}
+	
+		local panel_main_frame = Instance.new('Frame')
+		panel_main_frame.Parent = Library.ScreenGUI
+		panel_main_frame.Name = ""
+		panel_main_frame.BackgroundTransparency = 0.4000000059604645
+		panel_main_frame.Size = UDim2.new(1, 0, 1, 0)
+		panel_main_frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		panel_main_frame.ZIndex = 1000
+		panel_main_frame.BorderSizePixel = 0
+		panel_main_frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	
+		local holder = Instance.new('Frame')
+		holder.Parent = panel_main_frame
+		holder.Name = ""
+		holder.BorderColor3 = Color3.fromRGB(19, 19, 19)
+		holder.AnchorPoint = Vector2.new(0.5, 0.5)
+		holder.BackgroundTransparency = 1
+		holder.Position = UDim2.new(0.5, 0, 0.5, 0)
+		holder.ZIndex = 999
+		holder.AutomaticSize = Enum.AutomaticSize.XY
+		holder.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	
+		local inline1 = Instance.new('Frame')
+		inline1.Parent = holder
+		inline1.Name = ""
+		inline1.BorderColor3 = Color3.fromRGB(8, 8, 8)
+		inline1.AutomaticSize = Enum.AutomaticSize.XY
+		inline1.BackgroundColor3 = Color3.fromRGB(56, 56, 56)
+	
+		local main = Instance.new('Frame')
+		main.Parent = inline1
+		main.Name = ""
+		main.Position = UDim2.new(0, 4, 0, 4)
+		main.BorderColor3 = Color3.fromRGB(26, 26, 26)
+		main.Size = UDim2.new(1, -8, 1, -8)
+		main.BorderSizePixel = 2
+		main.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+	
+		local UIStroke = Instance.new('UIStroke')
+		UIStroke.Parent = main
+		UIStroke.Name = ""
+		UIStroke.Color = Color3.fromRGB(57, 57, 57)
+		UIStroke.LineJoinMode = Enum.LineJoinMode.Miter
+	
+		local tabs = Instance.new('Frame')
+		tabs.Parent = main
+		tabs.Name = ""
+		tabs.Position = UDim2.new(0, 8, 0, 8)
+		tabs.BorderColor3 = Color3.fromRGB(8, 8, 8)
+		tabs.Size = UDim2.new(1, -16, 1, -16)
+		tabs.BorderSizePixel = 2
+		tabs.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+	
+		local UIStroke = Instance.new('UIStroke')
+		UIStroke.Parent = tabs
+		UIStroke.Name = ""
+		UIStroke.Color = Color3.fromRGB(57, 57, 57)
+		UIStroke.LineJoinMode = Enum.LineJoinMode.Miter
+	
+		local UIPadding = Instance.new('UIPadding')
+		UIPadding.Parent = tabs
+		UIPadding.Name = ""
+		UIPadding.PaddingTop = UDim.new(0, 5)
+		UIPadding.PaddingBottom = UDim.new(0, 22)
+		UIPadding.PaddingRight = UDim.new(0, 20)
+		UIPadding.PaddingLeft = UDim.new(0, 20)
+	
+		local aimbot = Instance.new('TextLabel')
+		aimbot.Parent = tabs
+		aimbot.Name = ""
+		aimbot.FontFace = Library.Font
+		aimbot.LineHeight = 1.2000000476837158
+		aimbot.TextStrokeTransparency = 0.5
+		aimbot.AnchorPoint = Vector2.new(0.5, 0)
+		aimbot.TextSize = 12
+		aimbot.Size = UDim2.new(0, 0, 0, 11)
+		aimbot.TextColor3 = Color3.fromRGB(170, 170, 170)
+		aimbot.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		aimbot.Text = Panel.Name
+		aimbot.BackgroundTransparency = 1
+		aimbot.Position = UDim2.new(0.5, 0, 0, 8)
+		aimbot.BorderSizePixel = 0
+		aimbot.TextYAlignment = Enum.TextYAlignment.Top
+		aimbot.AutomaticSize = Enum.AutomaticSize.XY
+		aimbot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	
+		local UIPadding = Instance.new('UIPadding')
+		UIPadding.Parent = aimbot
+		UIPadding.Name = ""
+		UIPadding.PaddingTop = UDim.new(0, 6)
+	
+		local UIListLayout = Instance.new('UIListLayout')
+		UIListLayout.Parent = tabs
+		UIListLayout.Name = ""
+		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		UIListLayout.Padding = UDim.new(0, 4)
+	
+		local Frame = Instance.new('Frame')
+		Frame.Parent = tabs
+		Frame.Name = ""
+		Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Frame.BorderSizePixel = 0
+		Frame.AutomaticSize = Enum.AutomaticSize.Y
+		Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	
+		local UIListLayout = Instance.new('UIListLayout')
+		UIListLayout.Parent = Frame
+		UIListLayout.Name = ""
+		UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		UIListLayout.Padding = UDim.new(0, 3)
+	
+		local UIPadding = Instance.new('UIPadding')
+		UIPadding.Parent = Frame
+		UIPadding.Name = ""
+	
+		for _, v in next, Panel.Options do 
+			local button_inline = Instance.new('Frame')
+			button_inline.Parent = Frame
+			button_inline.Name = ""
+			button_inline.Position = UDim2.new(0, 0, 0, 4)
+			button_inline.BorderColor3 = Color3.fromRGB(19, 19, 19)
+			button_inline.Size = UDim2.new(0, 130, 0, 16)
+			button_inline.BorderSizePixel = 0
+			button_inline.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+	
+			local button = Instance.new('TextButton')
+			button.Parent = button_inline
+			button.Name = ""
+			button.FontFace = Library.Font
+			button.TextColor3 = Color3.fromRGB(170, 170, 170)
+			button.BorderColor3 = Color3.fromRGB(56, 56, 56)
+			button.Text = v
+			button.TextStrokeTransparency = 0.5
+			button.Position = UDim2.new(0, 2, 0, 2)
+			button.Size = UDim2.new(1, -4, 1, -4)
+			button.TextSize = 12
+			button.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+			
+			button.MouseButton1Click:Connect(function()
+				Panel.Callback(v) 
+				panel_main_frame:Destroy() 
+				Library.__panel = false 
+			end)
+		end     
+	end
+	--
 	function Sections:Button(Options)
 		local Properties = Options or {}
 		local Button = {
@@ -2986,4 +3342,119 @@ do
 	end
 end
 
+function Library:Configs(tab)
+	local cfgs = tab:Section({Name = "Config", Side = "Left", Size = 427})
+	local window = tab:Section({Name = "Window", Side = "Right", Size = 427})
+	--
+	local cfg_list = cfgs:List({Name = "Config List", Flag = "setting_configuration_list", Options = {}})
+	cfgs:Textbox({Flag = "settings_configuration_name", Placeholder = "Config name"})
+	--
+	cfgs:Button({Name = "Create", Callback = function()
+		local config_name = Library.Flags.settings_configuration_name
+		if config_name == "" or isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. config_name .. Library.fileext) then
+			return
+		end
+		
+		writefile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. config_name .. Library.fileext, HttpService:JSONEncode({}))
+		cfg_list:Refresh(Library:GetConfigs())
+	end})
+	--
+	cfgs:Button({Name = "Save", Callback = function()
+		local selected_config = Library.Flags.setting_configuration_list
+		if selected_config then
+			Library:Panel({
+				Name = "Are you sure you want to save the config '".. selected_config .."' ?",
+				Options = {"Yes", "No"},
+				Callback = function(option)
+					if option == "Yes" then 
+						Library:SaveConfig(selected_config)
+					end 
+				end
+			})
+		end
+	end})
+	--
+	cfgs:Button({Name = "Load", Callback = function()
+		local selected_config = Library.Flags.setting_configuration_list
+		if selected_config then
+			if isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext) then
+				Library:LoadConfig(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext)
+			end
+		end
+	end})
+	--
+	cfgs:Button({Name = 'Delete', Callback = function()
+		local selected_config = Library.Flags.setting_configuration_list
+        Library:Panel({
+            Name = "Are you sure you want to delete the config '".. selected_config .."' ?",
+            Options = {"Yes", "No"},
+            Callback = function(option)
+                if option == "Yes" then 
+                    if isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext) then
+                        delfile(Library.cheatname..'/'..Library.gamename..'/configs/'..selected_config.. Library.fileext)
+                    end
+					cfg_list:Refresh(Library:GetConfigs())
+                end 
+            end
+        })
+    end})
+	--
+	cfgs:Button({Name = "Refresh", Callback = function()
+		cfg_list:Refresh(Library:GetConfigs())
+	end})
+	--
+	cfg_list:Refresh(Library:GetConfigs())
+	--
+	window:Keybind({Name = "UI Toggle", Flag = "ui_toggle", Default = Enum.KeyCode.RightShift, Callback = function(key)
+		Library.UIKey = key
+	end})
+	--
+	window:Colorpicker({Name = "Menu Accent", Flag = "MenuAccent", Default = Library.Accent, Callback = function(state)
+		Library:ChangeAccent(state)
+	end})
+	--
+	window:Button({Name = "Rejoin Server", Callback = function()
+		Library:Panel({
+            Name = "Are you sure you want to rejoin the game ?",
+            Options = {"Yes", "No"},
+            Callback = function(option)
+                if option == "Yes" then 
+					LocalPlayer:Kick('['..Library.cheatname..']'..' Rejoining Server')
+					TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId);
+                end 
+            end
+        })
+	end})
+	--
+	window:Button({Name = "Rejoin Game", Callback = function()
+		Library:Panel({
+            Name = "Are you sure you want to rejoin the server ?",
+            Options = {"Yes", "No"},
+            Callback = function(option)
+                if option == "Yes" then 
+					LocalPlayer:Kick('['..Library.cheatname..']'..' Rejoining Game')
+					TeleportService:Teleport(game.PlaceId);
+                end 
+            end
+        })
+	end})
+	--
+	window:Button({Name = "Remove Voice Chat Ban", Callback = function()
+		VoiceChatService:joinVoice()
+	end})
+	--
+	window:Button({Name = "Unload", Callback = function()
+		Library:Panel({
+            Name = "Are you sure you want to unload the cheat ?",
+            Options = {"Yes", "No"},
+            Callback = function(option)
+                if option == "Yes" then 
+					Library:Unload()
+                end 
+            end
+        })
+	end})
+end
+
+getgenv().init = Library
 return Library

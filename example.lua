@@ -5,71 +5,58 @@ local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/Reloa
     cheatname = 'Menu Library',
     gamename = 'Unknown',
     fileext = '.cfg',
-    logo = '140593867166824',
-    icon = '140593867166824',
-    Accent = Color3.fromRGB(79, 155, 255)
+    Accent = Color3.fromRGB(172, 84, 255)
 })
 
-local Window = Library:New({Size = UDim2.new(0, 600, 0, 500)})
+local Window = Library:Window()
 
-Window:Seperator({Name = 'Combat'})
 local Legit = Window:Page({
-    Name = 'Legit',
-    Icon = 'http://www.roblox.com/asset/?id=6023426921'
+    Name = 'Legit'
 })
 
 local Rage = Window:Page({
-    Name = 'Rage',
-    'http://www.roblox.com/asset/?id=6023426921'
+    Name = 'Rage'
 })
 
-Window:Seperator({Name = 'Visuals'})
 local World = Window:Page({
-    Name = 'World',
-    Icon = 'http://www.roblox.com/asset/?id=6034684930'
+    Name = 'World'
 })
 
 local View = Window:Page({
-    Name = 'View',
-    Icon = 'http://www.roblox.com/asset/?id=6031075931'
+    Name = 'View'
 })
 
-Window:Seperator({Name = 'Player'})
 local Movement = Window:Page({
-    Name = 'Movement',
-    Icon = 'http://www.roblox.com/asset/?id=6034754445'
+    Name = 'Movement'
 })
 
 local AntiAim = Window:Page({
-    Name = 'Anti Aim',
-    Icon = 'http://www.roblox.com/asset/?id=14760676189'
+    Name = 'Anti Aim'
 })
 
-Window:Seperator({Name = 'Settings'})
 local Settings = Window:Page({
-    Name = 'Settings',
-    Icon = 'http://www.roblox.com/asset/?id=6031280882'
+    Name = 'Settings'
 })
 
-local LegitMain = Legit:Section({
-    Name = 'Main',
-    Side = 'Left',
-    Size = 427
+local ExampleSection = Legit:Section({
+    Name = 'Example Section',
+    LeftTitle = 'Left',
+    RightTitle = 'Right'
 })
 
-LegitMain:Toggle({
+ExampleSection:Toggle({
     Name = 'Example Toggle',
     Flag = 'example_toggle'
 })
 
-LegitMain:Keybind({
+ExampleSection:Keybind({
     Flag = 'example_keybind',
     Name = 'Example Keybind',
     Default = Enum.KeyCode.X,
     Mode = 'Toggle'
 })
 
-LegitMain:Slider({
+ExampleSection:Slider({
     Name = 'Example Slider',
     Flag = 'example_slider',
     Default = 1,
@@ -79,14 +66,14 @@ LegitMain:Slider({
     Ending = '%'
 })
 
-LegitMain:List({
+ExampleSection:List({
     Name = 'Example Listbox',
     Flag = 'example_listbox',
     Options = {'One', 'Two', 'Three', 'Four'},
     Default = 'One'
 })
 
-LegitMain:Colorpicker({
+ExampleSection:Colorpicker({
     Name = 'Example Colorpicker',
     Flag = 'example_colorpicker',
     Default = Color3.fromRGB(255, 0, 0)

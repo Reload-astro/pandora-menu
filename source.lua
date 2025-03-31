@@ -699,8 +699,8 @@ do
 		}
 
 		-- // Instances
-		local ScreenGUI = Instance.new('ScreenGui', Library.Folder)
-		local Main = Instance.new('Frame', ScreenGUI)
+		Library.ScreenGUI = Instance.new('ScreenGui', Library.Folder)
+		local Main = Instance.new('Frame', Library.ScreenGUI)
 		local Inline = Instance.new('Frame', Main)
 		local Middle = Instance.new('Frame', Inline)
 		local Line = Instance.new('Frame', Middle)
@@ -731,8 +731,7 @@ do
 			end
 		end)
 		--
-		ScreenGUI.Name = "MobileLayout"-- this is done to bypass dahoods tweening (its cancer)"
-		Library.ScreenGUI = ScreenGUI
+		Library.ScreenGUI.Name = "MobileLayout"-- this is done to bypass dahoods tweening (its cancer)"
 		-- Inserts
 		table.insert(Library.Instances, Main)
 		table.insert(Library.Instances, Inline)

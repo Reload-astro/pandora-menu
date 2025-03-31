@@ -90,7 +90,7 @@ local Library = {
 		[Enum.UserInputType.MouseButton2] = "MB2",
 		[Enum.UserInputType.MouseButton3] = "MB3"
 	},
-	UIKey = nil,
+	UIKey = Enum.KeyCode.RightShift,
 	UIFont = nil,
 	FontSize = 12
 }
@@ -695,7 +695,7 @@ do
 			Sections = {},
 			Elements = {},
 			Dragging = { false, UDim2.new(0, 0, 0, 0) },
-			Title = Library.cheatname
+			Title = Library.cheatname.. ' ['..Library.gamename..']'
 		}
 
 		-- // Instances
@@ -888,8 +888,8 @@ do
 			end
 		end)
 
-		Library:Connection(UserInputService.InputBegan, function(Input)
-			if Input.KeyCode == Library.UIKey then
+		Library:Connection(UserInputService.InputBegan, function(Inp)
+			if Inp.KeyCode == Library.UIKey then
 				Library:SetOpen(not Library.Open)
 			end
 		end)
@@ -1634,7 +1634,7 @@ do
 			Mode.Size = UDim2.new(1,-30,1,0)
 			Mode.BackgroundColor3 = Color3.new(1,1,1)
 			Mode.BackgroundTransparency = 1
-			Mode.Text = ""
+			Mode.Text = Keybind.Mode == "Hold" and "[H]" or Keybind.Mode == "Toggle" and "[T]" or "[A]"
 			Mode.TextColor3 = Color3.new(1,1,1)
 			Mode.FontFace = Library.UIFont
 			Mode.TextSize = Library.FontSize
@@ -1672,6 +1672,7 @@ do
 				elseif table.find({ "Always", "Toggle", "Hold" }, newkey) then
 					Library.Flags[Keybind.Flag .. "_KEY STATE"] = newkey
 					Keybind.Mode = newkey
+					Mode.Text = Keybind.Mode == "Hold" and "[H]" or Keybind.Mode == "Toggle" and "[T]" or "[A]"
 					Cycle = Keybind.Mode == "Hold" and 1 or Keybind.Mode == "Toggle" and 2 or 3
 					if Keybind.Mode == "Always" then
 						State = true

@@ -6,11 +6,11 @@
     A user interface that supports roblox script executor lua. 
     <br />
     <br />
-    <a href="https://raw.githubusercontent.com/Reload-astro/star-menu/refs/heads/main/example.lua">View Demo</a>
+    <a href="https://raw.githubusercontent.com/Reload-astro/pandora-menu/refs/heads/main/example.lua">View Demo</a>
   </p>
 
   <div align="center">
-    <img src="https://github.com/Reload-astro/star-menu/blob/main/assets/preview.png?raw=true" alt="Preview" />
+    <img src="https://github.com/Reload-astro/pandora-menu/blob/main/assets/preview.png?raw=true" alt="Preview" />
   </div>
 </div>
 
@@ -25,7 +25,7 @@ This is how you import the library through the repository.
   ```lua
   -- EXTRA INFO: You can modify this library its open source. The code is horrendous but have fun.
 
-  local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/Reload-astro/star-menu/refs/heads/main/source.lua'))({
+  local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/Reload-astro/pandora-menu/refs/heads/main/source.lua'))({
       cheatname = 'Title',
       gamename = 'Unknown',
       fileext = '.cfg',

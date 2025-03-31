@@ -331,8 +331,8 @@ do
 			return
 		end
 
+		local Config = ""
 		local s,e = pcall(function()
-			local Config = ""
 			for Index, Value in pairs(self.Flags) do
 				if
 					Index ~= "ConfigConfig_List"
@@ -3357,8 +3357,8 @@ do
 end
 
 function Library:Configs(tab)
-	local cfgs = tab:Section({Name = "Config", Side = "Left", Size = 427})
-	local window = tab:Section({Name = "Window", Side = "Right", Size = 427})
+	local cfgs = tab:Section({Name = "Config", LeftTitle = 'Main', RightTitle = 'Other'})
+	local window = tab:Section({Name = "Window", LeftTitle = 'Main', RightTitle = 'Other'})
 	--
 	local cfg_list = cfgs:List({Name = "Config List", Flag = "setting_configuration_list", Options = {}})
 	cfgs:Textbox({Flag = "settings_configuration_name", Placeholder = "Config name"})

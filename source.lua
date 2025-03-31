@@ -688,131 +688,6 @@ do
 	local Pages = Library.Pages
 	local Sections = Library.Sections
 	--
-	function Library:UpdateNotifications(position)
-		for i, v in pairs(Library.Notifications) do 
-			local Position = Vector2.new(20, 20)
-			TweenService:Create(v.Container, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0,Position.X,0,Position.Y + (i * 25))}):Play()
-		end 
-	end
-	--
-	function Library:Notification(message, duration)
-		local notification = {Container = nil, Objects = {}}
-		--
-		local Position = Vector2.new(20, 20)
-		--
-		local NewInd = Instance.new("Frame")
-		NewInd.Name = "NewInd"
-		NewInd.AutomaticSize = Enum.AutomaticSize.X
-		NewInd.Position = UDim2.new(0,20,0,20)
-		NewInd.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		NewInd.BackgroundTransparency = 1
-		NewInd.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		NewInd.Size = UDim2.fromOffset(0, 20)
-		NewInd.Parent = Library.ScreenGUI
-		notification.Container = NewInd
-		--
-		local Outline = Instance.new("Frame")
-		Outline.Name = "Outline"
-		Outline.AnchorPoint = Vector2.new(0, 0)
-		Outline.AutomaticSize = Enum.AutomaticSize.X
-		Outline.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-		Outline.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		Outline.BorderSizePixel = 1
-		Outline.Position = UDim2.new(0,0,0,0)
-		Outline.Size = UDim2.fromOffset(0, 20)
-		Outline.Visible = true
-		Outline.ZIndex = 50
-		Outline.Parent = NewInd
-		Outline.BackgroundTransparency = 1
-		--
-		local UICorner = Instance.new("UICorner")
-		UICorner.Name = "UICorner"
-		UICorner.CornerRadius = UDim.new(0, 4)
-		UICorner.Parent = Outline
-		--
-		local UIStroke = Instance.new("UIStroke")
-		UIStroke.Name = "UIStroke"
-		UIStroke.Parent = Outline
-		UIStroke.Transparency = 1
-		--
-		local Inline = Instance.new("Frame")
-		Inline.Name = "Inline"
-		Inline.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
-		Inline.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		Inline.BorderSizePixel = 0
-		Inline.Position = UDim2.fromOffset(1, 1)
-		Inline.Size = UDim2.new(1, -2, 1, -2)
-		Inline.ZIndex = 51
-		Inline.BackgroundTransparency = 1
-		--
-		local UICorner2 = Instance.new("UICorner")
-		UICorner2.Name = "UICorner_2"
-		UICorner2.CornerRadius = UDim.new(0, 4)
-		UICorner2.Parent = Inline
-		--
-		local Title = Instance.new("TextLabel")
-		Title.Name = "Title"
-		Title.FontFace = Library.Font
-		Title.RichText = true
-		Title.Text = message
-		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Title.TextSize = 13
-		Title.TextXAlignment = Enum.TextXAlignment.Left
-		Title.AutomaticSize = Enum.AutomaticSize.X
-		Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		Title.BackgroundTransparency = 1
-		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
-		Title.BorderSizePixel = 0
-		Title.Position = UDim2.fromOffset(5, 0)
-		Title.Size = UDim2.fromScale(0, 1)
-		Title.Parent = Inline
-		Title.TextTransparency = 1
-		--
-		local UIPadding = Instance.new("UIPadding")
-		UIPadding.Name = "UIPadding"
-		UIPadding.PaddingRight = UDim.new(0, 6)
-		UIPadding.Parent = Inline
-		--
-		Inline.Parent = Outline
-		--
-		function notification:remove()
-			table.remove(Library.Notifications, table.find(Library.Notifications, notification))
-			Library:UpdateNotifications(Position)
-			task.wait(0.5)
-			NewInd:Destroy()
-		end
-		--
-		task.spawn(function()
-			Outline.AnchorPoint = Vector2.new(1,0)
-			for i,v in next, NewInd:GetDescendants() do
-				if v:IsA("Frame") then
-					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-				elseif v:IsA("UIStroke") then
-					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-				end
-			end
-			local Tween1 = TweenService:Create(Outline, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {AnchorPoint = Vector2.new(0,0)}):Play()
-			TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-			task.wait(duration)
-			for i,v in next, NewInd:GetDescendants() do
-				if v:IsA("Frame") then
-					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
-				elseif v:IsA("UIStroke") then
-					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 1}):Play()
-				end
-			end
-			TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
-		end)
-		--
-		task.delay(duration + 0.1, function()
-			notification:remove()
-		end)
-		--
-		table.insert(Library.Notifications, notification)
-		Library:UpdateNotifications(Position)
-		NewInd.Position = UDim2.new(0,Position.X,0,Position.Y + (table.find(Library.Notifications, notification) * 25))
-		return notification
-	end
 	--
 	function Library:Window(Options)
 		local Base = {
@@ -1023,6 +898,132 @@ do
 		-- // Return
 		Base.Elements = {Main = Main, Title = Title, Middle = Middle, PageHolder = Pages, SectionHolder = Sections}
 		return setmetatable(Base, Library)
+	end
+	--
+	function Library:UpdateNotifications(position)
+		for i, v in pairs(Library.Notifications) do 
+			local Position = Vector2.new(20, 20)
+			TweenService:Create(v.Container, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0,Position.X,0,Position.Y + (i * 25))}):Play()
+		end 
+	end
+	--
+	function Library:Notification(message, duration)
+		local notification = {Container = nil, Objects = {}}
+		--
+		local Position = Vector2.new(20, 20)
+		--
+		local NewInd = Instance.new("Frame")
+		NewInd.Name = "NewInd"
+		NewInd.AutomaticSize = Enum.AutomaticSize.X
+		NewInd.Position = UDim2.new(0,20,0,20)
+		NewInd.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		NewInd.BackgroundTransparency = 1
+		NewInd.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		NewInd.Size = UDim2.fromOffset(0, 20)
+		NewInd.Parent = Library.ScreenGUI
+		notification.Container = NewInd
+		--
+		local Outline = Instance.new("Frame")
+		Outline.Name = "Outline"
+		Outline.AnchorPoint = Vector2.new(0, 0)
+		Outline.AutomaticSize = Enum.AutomaticSize.X
+		Outline.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		Outline.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Outline.BorderSizePixel = 1
+		Outline.Position = UDim2.new(0,0,0,0)
+		Outline.Size = UDim2.fromOffset(0, 20)
+		Outline.Visible = true
+		Outline.ZIndex = 50
+		Outline.Parent = NewInd
+		Outline.BackgroundTransparency = 1
+		--
+		local UICorner = Instance.new("UICorner")
+		UICorner.Name = "UICorner"
+		UICorner.CornerRadius = UDim.new(0, 4)
+		UICorner.Parent = Outline
+		--
+		local UIStroke = Instance.new("UIStroke")
+		UIStroke.Name = "UIStroke"
+		UIStroke.Parent = Outline
+		UIStroke.Transparency = 1
+		--
+		local Inline = Instance.new("Frame")
+		Inline.Name = "Inline"
+		Inline.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
+		Inline.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Inline.BorderSizePixel = 0
+		Inline.Position = UDim2.fromOffset(1, 1)
+		Inline.Size = UDim2.new(1, -2, 1, -2)
+		Inline.ZIndex = 51
+		Inline.BackgroundTransparency = 1
+		--
+		local UICorner2 = Instance.new("UICorner")
+		UICorner2.Name = "UICorner_2"
+		UICorner2.CornerRadius = UDim.new(0, 4)
+		UICorner2.Parent = Inline
+		--
+		local Title = Instance.new("TextLabel")
+		Title.Name = "Title"
+		Title.FontFace = Library.Font
+		Title.RichText = true
+		Title.Text = message
+		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		Title.TextSize = 13
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		Title.AutomaticSize = Enum.AutomaticSize.X
+		Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		Title.BackgroundTransparency = 1
+		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+		Title.BorderSizePixel = 0
+		Title.Position = UDim2.fromOffset(5, 0)
+		Title.Size = UDim2.fromScale(0, 1)
+		Title.Parent = Inline
+		Title.TextTransparency = 1
+		--
+		local UIPadding = Instance.new("UIPadding")
+		UIPadding.Name = "UIPadding"
+		UIPadding.PaddingRight = UDim.new(0, 6)
+		UIPadding.Parent = Inline
+		--
+		Inline.Parent = Outline
+		--
+		function notification:remove()
+			table.remove(Library.Notifications, table.find(Library.Notifications, notification))
+			Library:UpdateNotifications(Position)
+			task.wait(0.5)
+			NewInd:Destroy()
+		end
+		--
+		task.spawn(function()
+			Outline.AnchorPoint = Vector2.new(1,0)
+			for i,v in next, NewInd:GetDescendants() do
+				if v:IsA("Frame") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+				elseif v:IsA("UIStroke") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 0}):Play()
+				end
+			end
+			local Tween1 = TweenService:Create(Outline, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {AnchorPoint = Vector2.new(0,0)}):Play()
+			TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+			task.wait(duration)
+			for i,v in next, NewInd:GetDescendants() do
+				if v:IsA("Frame") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
+				elseif v:IsA("UIStroke") then
+					TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 1}):Play()
+				end
+			end
+			TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+		end)
+		--
+		task.delay(duration + 0.1, function()
+			notification:remove()
+		end)
+		--
+		table.insert(Library.Notifications, notification)
+		Library:UpdateNotifications(Position)
+		NewInd.Position = UDim2.new(0,Position.X,0,Position.Y + (table.find(Library.Notifications, notification) * 25))
+		return notification
 	end
 	--
 	function Library:Page(Options)

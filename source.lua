@@ -90,7 +90,7 @@ local Library = {
 		[Enum.UserInputType.MouseButton2] = "MB2",
 		[Enum.UserInputType.MouseButton3] = "MB3"
 	},
-	UIKey = Enum.KeyCode.RightShift,
+	UIKey = nil,
 	UIFont = nil,
 	FontSize = 12
 }
@@ -695,7 +695,7 @@ do
 			Sections = {},
 			Elements = {},
 			Dragging = { false, UDim2.new(0, 0, 0, 0) },
-			Title = Library.cheatname.. ' ['..Library.gamename..']'
+			Title = Library.cheatname
 		}
 
 		-- // Instances
@@ -888,8 +888,8 @@ do
 			end
 		end)
 
-		Library:Connection(UserInputService.InputBegan, function(Inp)
-			if Inp.KeyCode == Library.UIKey then
+		Library:Connection(UserInputService.InputBegan, function(Input)
+			if Input.KeyCode == Library.UIKey then
 				Library:SetOpen(not Library.Open)
 			end
 		end)
@@ -963,7 +963,7 @@ do
 		--
 		local Title = Instance.new("TextLabel")
 		Title.Name = "Title"
-		Title.FontFace = Library.Font
+		Title.FontFace = Library.UIFont
 		Title.RichText = true
 		Title.Text = message
 		Title.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -3096,7 +3096,7 @@ do
 		local aimbot = Instance.new('TextLabel')
 		aimbot.Parent = tabs
 		aimbot.Name = ""
-		aimbot.FontFace = Library.Font
+		aimbot.FontFace = Library.UIFont
 		aimbot.LineHeight = 1.2000000476837158
 		aimbot.TextStrokeTransparency = 0.5
 		aimbot.AnchorPoint = Vector2.new(0.5, 0)
@@ -3156,7 +3156,7 @@ do
 			local button = Instance.new('TextButton')
 			button.Parent = button_inline
 			button.Name = ""
-			button.FontFace = Library.Font
+			button.FontFace = Library.UIFont
 			button.TextColor3 = Color3.fromRGB(170, 170, 170)
 			button.BorderColor3 = Color3.fromRGB(56, 56, 56)
 			button.Text = v

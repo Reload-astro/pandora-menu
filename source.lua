@@ -695,7 +695,7 @@ do
 			Sections = {},
 			Elements = {},
 			Dragging = { false, UDim2.new(0, 0, 0, 0) },
-			Title = Library.cheatname.. ' ['..Library.gamename..']'
+			Title = Library.cheatname
 		}
 
 		-- // Instances
@@ -860,6 +860,13 @@ do
 		corner1.CornerRadius = UDim.new(0,2)
 		corner2.CornerRadius = UDim.new(0,2)
 
+		-- // UI Toggling
+		Library:Connection(UserInputService.InputBegan, function(Input)
+			if Input.KeyCode == Library.UIKey then
+				Library:SetOpen(not Library.Open)
+			end
+		end)
+
 		-- // Dragging
 		Library:Connection(Top.MouseButton1Down, function()
 			local Location = UserInputService:GetMouseLocation()
@@ -885,12 +892,6 @@ do
 					0,
 					Location.Y - Base.Dragging[2].Y.Offset + (Main.Size.Y.Offset * Main.AnchorPoint.Y)
 				)
-			end
-		end)
-
-		Library:Connection(UserInputService.InputBegan, function(Inp)
-			if Inp.KeyCode == Library.UIKey then
-				Library:SetOpen(not Library.Open)
 			end
 		end)
 
@@ -972,6 +973,7 @@ do
 		Title.AutomaticSize = Enum.AutomaticSize.X
 		Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		Title.BackgroundTransparency = 1
+		Inline.ZIndex = 53
 		Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		Title.BorderSizePixel = 0
 		Title.Position = UDim2.fromOffset(5, 0)

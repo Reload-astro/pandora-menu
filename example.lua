@@ -1,8 +1,8 @@
 local Decimals = 4
 local Clock = os.clock()
 
-local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/Reload-astro/star-menu/refs/heads/main/source.lua'))({
-    cheatname = 'Menu Library',
+local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/Reload-astro/pandora-menu/refs/heads/main/source.lua'))({
+    cheatname = 'Title',
     gamename = 'Unknown',
     fileext = '.cfg',
     Accent = Color3.fromRGB(172, 84, 255)

@@ -718,6 +718,7 @@ do
 		local corner2 = Instance.new('UICorner', Inline)
 		local stroke1 = Instance.new('UIStroke', Main)
 		local stroke2 = Instance.new('UIStroke', Inline)
+		local glow = Instance.new('ImageLabel', Main)
 		--
 		Library:Connection(Players.LocalPlayer.CharacterRemoving, function()
 			if Library.Folder then
@@ -744,6 +745,7 @@ do
 		table.insert(Library.Instances, version)
 		table.insert(Library.ThemeObjects, Title)
 		table.insert(Library.ThemeObjects, version)
+		table.insert(Library.ThemeObjects, glow)
 		--
 		Library.ScreenGui.DisplayOrder = 2
 		--
@@ -859,6 +861,16 @@ do
 		--
 		corner1.CornerRadius = UDim.new(0,2)
 		corner2.CornerRadius = UDim.new(0,2)
+		--
+		glow.Name = "glow"
+		glow.BackgroundTransparency = 1
+		glow.Position = UDim2.new(0, -15, 0, -15)
+		glow.Size = UDim2.new(1, 30, 1, 30)
+		glow.ZIndex = 0
+		glow.Image = "rbxassetid://5028857084"
+		glow.ImageColor3 = Library.Accent
+		glow.ScaleType = Enum.ScaleType.Slice
+		glow.SliceCenter = Rect.new(24, 24, 276, 276)
 
 		-- // UI Toggling
 		Library:Connection(UserInputService.InputBegan, function(Input)

@@ -26,7 +26,7 @@ This is how you import the library through the repository.
   -- EXTRA INFO: You can modify this library its open source. The code is horrendous but have fun.
 
   local Library = loadstring(game:HttpGet('https://raw.githubusercontent.com/Reload-astro/star-menu/refs/heads/main/source.lua'))({
-      cheatname = 'Menu Library',
+      cheatname = 'Title',
       gamename = 'Unknown',
       fileext = '.cfg',
       Accent = Color3.fromRGB(172, 84, 255)

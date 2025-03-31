@@ -264,7 +264,7 @@ do
 		end
 
 		local s,e = pcall(function()
-			local Table = string.split(cfg, "\n")
+			local Table = string.split(HttpService:JSONDecode(cfg), "\n")
 			local Table2 = {}
 			for Index, Value in pairs(Table) do
 				local Table3 = string.split(Value, ":")
@@ -872,13 +872,6 @@ do
 		glow.ScaleType = Enum.ScaleType.Slice
 		glow.SliceCenter = Rect.new(24, 24, 276, 276)
 
-		-- // UI Toggling
-		Library:Connection(UserInputService.InputBegan, function(Input)
-			if Input.KeyCode == Library.UIKey then
-				Library:SetOpen(not Library.Open)
-			end
-		end)
-
 		-- // Dragging
 		Library:Connection(Top.MouseButton1Down, function()
 			local Location = UserInputService:GetMouseLocation()
@@ -904,6 +897,13 @@ do
 					0,
 					Location.Y - Base.Dragging[2].Y.Offset + (Main.Size.Y.Offset * Main.AnchorPoint.Y)
 				)
+			end
+		end)
+
+		-- // UI Toggling
+		Library:Connection(UserInputService.InputBegan, function(Input)
+			if Input.KeyCode == Library.UIKey then
+				Library:SetOpen(not Library.Open)
 			end
 		end)
 
@@ -3418,10 +3418,6 @@ function Library:Configs(tab)
 	end})
 	--
 	cfg_list:Refresh(Library:GetConfigs())
-	--
-	window:Keybind({Name = "UI Toggle", Flag = "ui_toggle", Default = Enum.KeyCode.RightShift, Callback = function(key)
-		Library.UIKey = key
-	end})
 	--
 	window:Colorpicker({Name = "Menu Accent", Flag = "MenuAccent", Default = Library.Accent, Callback = function(state)
 		Library:ChangeAccent(state)

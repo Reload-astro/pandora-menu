@@ -35,7 +35,7 @@ local Library = {
 	Connections = {},
 	Drawings = {},
 	Notifications = {},
-	ScreenGUI = nil,
+	ScreenGui = nil,
 	Folder = nil,
 	Holder = nil,
 	PageHolder = nil,
@@ -177,7 +177,7 @@ do
 	end
 	--
 	function Library:Unload()
-		Library.Library.ScreenGUI:Destroy() 
+		Library.ScreenGui:Destroy() 
 		Library.Folder:Destroy()
 
 		for _, Connection in Library.Connections do 
@@ -699,8 +699,8 @@ do
 		}
 
 		-- // Instances
-		Library.ScreenGUI = Instance.new('ScreenGui', Library.Folder)
-		local Main = Instance.new('Frame', Library.ScreenGUI)
+		Library.ScreenGui = Instance.new('ScreenGui', Library.Folder)
+		local Main = Instance.new('Frame', Library.ScreenGui)
 		local Inline = Instance.new('Frame', Main)
 		local Middle = Instance.new('Frame', Inline)
 		local Line = Instance.new('Frame', Middle)
@@ -731,7 +731,7 @@ do
 			end
 		end)
 		--
-		Library.ScreenGUI.Name = "MobileLayout"-- this is done to bypass dahoods tweening (its cancer)"
+		Library.ScreenGui.Name = "MobileLayout"-- this is done to bypass dahoods tweening (its cancer)"
 		-- Inserts
 		table.insert(Library.Instances, Main)
 		table.insert(Library.Instances, Inline)
@@ -745,7 +745,7 @@ do
 		table.insert(Library.ThemeObjects, Title)
 		table.insert(Library.ThemeObjects, version)
 		--
-		Library.ScreenGUI.DisplayOrder = 2
+		Library.ScreenGui.DisplayOrder = 2
 		--
 		Main.Name = "Main"
 		Main.Position = UDim2.new(0.5,0,0.5,0)
@@ -919,7 +919,7 @@ do
 		NewInd.BackgroundTransparency = 1
 		NewInd.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		NewInd.Size = UDim2.fromOffset(0, 20)
-		NewInd.Parent = Library.ScreenGUI
+		NewInd.Parent = Library.ScreenGui
 		notification.Container = NewInd
 		--
 		local Outline = Instance.new("Frame")
@@ -3029,7 +3029,7 @@ do
 		}
 	
 		local panel_main_frame = Instance.new('Frame')
-		panel_main_frame.Parent = Library.ScreenGUI
+		panel_main_frame.Parent = Library.ScreenGui
 		panel_main_frame.Name = ""
 		panel_main_frame.BackgroundTransparency = 0.4000000059604645
 		panel_main_frame.Size = UDim2.new(1, 0, 1, 0)

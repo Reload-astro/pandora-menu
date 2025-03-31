@@ -699,7 +699,7 @@ do
 		}
 
 		-- // Instances
-		Library.ScreenGUI = Instance.new('ScreenGUI')
+		Library.ScreenGUI = Instance.new('ScreenGUI', Library.Folder)
 		local Main = Instance.new('Frame', Library.ScreenGUI)
 		local Inline = Instance.new('Frame', Main)
 		local Middle = Instance.new('Frame', Inline)

@@ -3419,10 +3419,6 @@ function Library:Configs(tab)
 	--
 	cfg_list:Refresh(Library:GetConfigs())
 	--
-	window:Keybind({Name = "UI Toggle", Mode = 'UI Toggle', Flag = "ui_toggle", Default = Enum.KeyCode.RightShift, Callback = function(key)
-		Library.UIKey = key
-	end})
-	--
 	window:Colorpicker({Name = "Menu Accent", Flag = "MenuAccent", Default = Library.Accent, Callback = function(state)
 		Library:ChangeAccent(state)
 	end})

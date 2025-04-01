@@ -1590,7 +1590,6 @@ do
 						or nil
 				),
 				Mode = (Properties.mode or Properties.Mode or "Toggle"),
-				UseKey = (Properties.UseKey or false),
 				Callback = (
 					Properties.callback
 						or Properties.Callback
@@ -1673,23 +1672,11 @@ do
 					end
 					if newkey == Enum.KeyCode.Backspace then
 						Key = nil
-						if Keybind.UseKey then
-							if Keybind.Flag then
-								Library.Flags[Keybind.Flag] = Key
-							end
-							Keybind.Callback(Key)
-						end
 
 						Value.Text = "[-]"
 					elseif newkey ~= nil then
 						Key = newkey
-						if Keybind.UseKey then
-							if Keybind.Flag then
-								Library.Flags[Keybind.Flag] = Key
-							end
 
-							Keybind.Callback(Key)
-						end
 						local text = (Library.Keys[newkey] or tostring(newkey):gsub("Enum.KeyCode.", ""))
 
 						Value.Text = "[" .. text .. "]"
@@ -1697,18 +1684,16 @@ do
 
 					Library.Flags[Keybind.Flag .. "_KEY"] = newkey
 				elseif table.find({ "Always", "Toggle", "Hold" }, newkey) then
-					if not Keybind.UseKey then
-						Library.Flags[Keybind.Flag .. "_KEY STATE"] = newkey
-						Keybind.Mode = newkey
-						Mode.Text = Keybind.Mode == "Hold" and "[H]" or Keybind.Mode == "Toggle" and "[T]" or "[A]"
-						Cycle = Keybind.Mode == "Hold" and 1 or Keybind.Mode == "Toggle" and 2 or 3
-						if Keybind.Mode == "Always" then
-							State = true
-							if Keybind.Flag then
-								Library.Flags[Keybind.Flag] = State
-							end
-							Keybind.Callback(true)
+					Library.Flags[Keybind.Flag .. "_KEY STATE"] = newkey
+					Keybind.Mode = newkey
+					Mode.Text = Keybind.Mode == "Hold" and "[H]" or Keybind.Mode == "Toggle" and "[T]" or "[A]"
+					Cycle = Keybind.Mode == "Hold" and 1 or Keybind.Mode == "Toggle" and 2 or 3
+					if Keybind.Mode == "Always" then
+						State = true
+						if Keybind.Flag then
+							Library.Flags[Keybind.Flag] = State
 						end
+						Keybind.Callback(true)
 					end
 				else
 					State = newkey
@@ -1743,7 +1728,7 @@ do
 			--
 			Library:Connection(UserInputService.InputBegan, function(inp)
 				if (inp.KeyCode == Key or inp.UserInputType == Key) and not Keybind.Binding then
-					if Keybind.Mode == "Hold" and not Keybind.UseKey then
+					if Keybind.Mode == "Hold" then
 						if Keybind.Flag then
 							Library.Flags[Keybind.Flag] = true
 						end
@@ -1763,7 +1748,7 @@ do
 			end)
 			--
 			Library:Connection(UserInputService.InputEnded, function(inp)
-				if Keybind.Mode == "Hold" and not Keybind.UseKey then
+				if Keybind.Mode == "Hold" then
 					if Key ~= "" or Key ~= nil then
 						if inp.KeyCode == Key or inp.UserInputType == Key then
 							if Keybind.Connection then
@@ -3434,7 +3419,7 @@ function Library:Configs(tab)
 	--
 	cfg_list:Refresh(Library:GetConfigs())
 	--
-	window:Keybind({Name = "UI Toggle", Flag = "ui_toggle", Default = Enum.KeyCode.RightShift, UseKey = true, Callback = function(key)
+	window:Keybind({Name = "UI Toggle", Mode = 'UI Toggle', Flag = "ui_toggle", Default = Enum.KeyCode.RightShift, Callback = function(key)
 		Library.UIKey = key
 	end})
 	--

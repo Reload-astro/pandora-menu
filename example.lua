@@ -18,6 +18,10 @@ local Rage = Window:Page({
     Name = 'Rage'
 })
 
+local AntiAim = Window:Page({
+    Name = 'Anti Aim'
+})
+
 local World = Window:Page({
     Name = 'World'
 })
@@ -28,10 +32,6 @@ local View = Window:Page({
 
 local Movement = Window:Page({
     Name = 'Movement'
-})
-
-local AntiAim = Window:Page({
-    Name = 'Anti Aim'
 })
 
 local Settings = Window:Page({
@@ -79,7 +79,11 @@ ExampleSection:Colorpicker({
     Default = Color3.fromRGB(255, 0, 0)
 })
 
+ExampleSection:Button({Name = "Notify", Callback = function()
+    Library:Notification({Name = "Title", Description = "This is a example notify.", Duration = 6})
+end})
+
 Library:Configs(Settings)
 
 local Time = (string.format("%."..tostring(Decimals).."f", os.clock() - Clock))
-Library:Notification(("Loaded In "..tostring(Time)), 6)
+Library:Notification({Name = "Title", Description = ("Loaded In "..tostring(Time)), Duration = 6})

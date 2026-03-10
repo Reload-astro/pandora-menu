@@ -200,7 +200,7 @@ function Library:Notification(message, duration)
 
 	local Title = Instance.new("TextLabel")
 	Title.Name = "Title"
-	Title.FontFace = Library.Font
+	Title.FontFace = Library.UIFont
 	Title.RichText = true
 	Title.Text = message
 	Title.TextColor3 = Color3.fromRGB(255, 255, 255)

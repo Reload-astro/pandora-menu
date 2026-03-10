@@ -8,17 +8,20 @@ if getgenv().init then
 	getgenv().init:Unload()
 end
 
-local Players = game:GetService("Players")
+local GetService = function(service)
+	return cloneref(game:GetService(service))
+end
+
+local Players = GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local PlayerGui = LocalPlayer:FindFirstChild('PlayerGui')
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VoiceChatService = game:GetService("VoiceChatService")
-local TeleportService = game:GetService("TeleportService")
-local UserInputService = game:GetService("UserInputService")
+local HttpService = GetService("HttpService")
+local TweenService = GetService("TweenService")
+local ReplicatedStorage = GetService("ReplicatedStorage")
+local VoiceChatService = GetService("VoiceChatService")
+local TeleportService = GetService("TeleportService")
+local UserInputService = GetService("UserInputService")
 
 local Library = {
 	Open = true,
@@ -34,7 +37,6 @@ local Library = {
 	Instances = {},
 	Connections = {},
 	Drawings = {},
-	Notifications = {},
 	ScreenGui = nil,
 	Folder = nil,
 	Holder = nil,
@@ -92,7 +94,7 @@ local Library = {
 	},
 	UIKey = Enum.KeyCode.RightShift,
 	UIFont = nil,
-	FontSize = 12
+	FontSize = 12,
 }
 
 if not isfolder(Library.cheatname) then 
@@ -151,7 +153,7 @@ if not PlayerGui:FindFirstChild("Menu") then
 end
 
 -- // Misc Functions
-do
+do	
 	function Library:Connection(Signal, Callback)
 		local connection = Signal:Connect(Callback)
 		
@@ -238,158 +240,123 @@ do
 		end)
 	end
 	--
-	function Library:GetConfigs()
-		local list = {};
-
-		for _, v in next, listfiles(Library.cheatname..'/'..Library.gamename..'/configs') do
-			local name = v:match("([^\\/]+)%..+$")
-			if name and v:sub(-#Library.fileext) == Library.fileext then
-				list[#list + 1] = name
-			end
-		end
-		return list
-	end
-	--
-	function Library:GetConfig(name)
-		if isfile(Library.cheatname..'/'..Library.gamename..'/configs/'..name..Library.fileext) then
-			return readfile(Library.cheatname..'/'..Library.gamename..'/configs/'..name..Library.fileext);
-		end
-	end
-	--
-	function Library:LoadConfig(name) 
-		local cfg = Library:GetConfig(name)
-		if not cfg then
-			Library:Notification('Error loading config: Config does not exist. ('..tostring(name)..')', 5)
-			return
-		end
-
-		local s,e = pcall(function()
-			local Config = HttpService:JSONDecode(cfg)
-			local Table = string.split(Config, "\n")
-			local Table2 = {}
-			for Index, Value in pairs(Table) do
-				local Table3 = string.split(Value, ":")
+	function Library:GetConfig()
+		local Config = ""
+		for Index, Value in pairs(self.Flags) do
+			if
+				Index ~= "ConfigConfig_List"
+				and Index ~= "ConfigConfig_Load"
+				and Index ~= "ConfigConfig_Save"
+			then
+				local Value2 = Value
+				local Final = ""
 				--
-				if Table3[1] ~= "ConfigConfig_List" and #Table3 >= 2 then
-					local Value = Table3[2]:sub(2, #Table3[2])
+				if typeof(Value2) == "Color3" then
+					local hue, sat, val = Value2:ToHSV()
 					--
-					if Value:sub(1, 3) == "rgb" then
-						local Table4 = string.split(Value:sub(5, #Value - 1), ",")
+					Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, 1)
+				elseif typeof(Value2) == "table" and Value2.Color and Value2.Transparency then
+					local hue, sat, val = Value2.Color:ToHSV()
+					--
+					Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, Value2.Transparency)
+				elseif typeof(Value2) == "table" and Value.Mode then
+					local Values = Value.current
+					--
+					Final = ("key(%s,%s,%s)"):format(Values[1] or "nil", Values[2] or "nil", Value.Mode)
+				elseif Value2 ~= nil then
+					if typeof(Value2) == "boolean" then
+						Value2 = ("bool(%s)"):format(tostring(Value2))
+					elseif typeof(Value2) == "table" then
+						local New = "table("
 						--
-						Value = Table4
-					elseif Value:sub(1, 3) == "key" then
-						local Table4 = string.split(Value:sub(5, #Value - 1), ",")
-						--
-						if Table4[1] == "nil" and Table4[2] == "nil" then
-							Table4[1] = nil
-							Table4[2] = nil
+						for Index2, Value3 in pairs(Value2) do
+							New = New .. Value3 .. ","
 						end
 						--
-						Value = Table4
-					elseif Value:sub(1, 4) == "bool" then
-						local Bool = Value:sub(6, #Value - 1)
+						if New:sub(#New) == "," then
+							New = New:sub(0, #New - 1)
+						end
 						--
-						Value = Bool == "true"
-					elseif Value:sub(1, 5) == "table" then
-						local Table4 = string.split(Value:sub(7, #Value - 1), ",")
-						--
-						Value = Table4
-					elseif Value:sub(1, 6) == "string" then
-						local String = Value:sub(8, #Value - 1)
-						--
-						Value = String
-					elseif Value:sub(1, 6) == "number" then
-						local Number = tonumber(Value:sub(8, #Value - 1))
-						--
-						Value = Number
+						Value2 = New .. ")"
+					elseif typeof(Value2) == "string" then
+						Value2 = ("string(%s)"):format(Value2)
+					elseif typeof(Value2) == "number" then
+						Value2 = ("number(%s)"):format(Value2)
 					end
 					--
-					Table2[Table3[1]] = Value
+					Final = Value2
 				end
+				--
+				Config = Config .. Index .. ": " .. tostring(Final) .. "\n"
 			end
+		end
+		--
+		return Config
+	end
+	--
+	function Library:LoadConfig(file)
+		local Config = readfile(file)
+		local Table = string.split(Config, "\n")
+		local Table2 = {}
+		for Index, Value in pairs(Table) do
+			local Table3 = string.split(Value, ":")
 			--
-			for i, v in pairs(Table2) do
-				if Flags[i] then
-					if typeof(Flags[i]) == "table" then
-						Flags[i]:Set(v)
-					else
-						Flags[i](v)
+			if Table3[1] ~= "ConfigConfig_List" and #Table3 >= 2 then
+				local Value = Table3[2]:sub(2, #Table3[2])
+				--
+				if Value:sub(1, 3) == "rgb" then
+					local Table4 = string.split(Value:sub(5, #Value - 1), ",")
+					--
+					Value = Table4
+				elseif Value:sub(1, 3) == "key" then
+					local Table4 = string.split(Value:sub(5, #Value - 1), ",")
+					--
+					if Table4[1] == "nil" and Table4[2] == "nil" then
+						Table4[1] = nil
+						Table4[2] = nil
 					end
+					--
+					Value = Table4
+				elseif Value:sub(1, 4) == "bool" then
+					local Bool = Value:sub(6, #Value - 1)
+					--
+					Value = Bool == "true"
+				elseif Value:sub(1, 5) == "table" then
+					local Table4 = string.split(Value:sub(7, #Value - 1), ",")
+					--
+					Value = Table4
+				elseif Value:sub(1, 6) == "string" then
+					local String = Value:sub(8, #Value - 1)
+					--
+					Value = String
+				elseif Value:sub(1, 6) == "number" then
+					local Number = tonumber(Value:sub(8, #Value - 1))
+					--
+					Value = Number
+				end
+				--
+				Table2[Table3[1]] = Value
+			end
+		end
+		--
+		for i, v in pairs(Table2) do
+			if Flags[i] then
+				if typeof(Flags[i]) == "table" then
+					Flags[i]:Set(v)
+				else
+					Flags[i](v)
 				end
 			end
-		end)
-
-		if s then
-			Library:Notification('Successfully loaded config: '..name, 5)
-		else
-			Library:Notification('Error loading config: '..tostring(e)..'. ('..tostring(name)..')', 5)
 		end
 	end
 	--
-	function Library:SaveConfig(name)
-		if not Library:GetConfig(name) then
-			Library:Notification('Error saving config: Config does not exist. ('..tostring(name)..')', 5)
+	function Library:SaveConfig(file)
+		if not isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. file .. Library.fileext) then
+			Library:Notification('Error saving config: Config does not exist. ('..tostring(file..Library.fileext)..')', 5);
 			return
 		end
 
-		local s,e = pcall(function()
-			local Config = ""
-			for Index, Value in pairs(self.Flags) do
-				if
-					Index ~= "ConfigConfig_List"
-					and Index ~= "ConfigConfig_Load"
-					and Index ~= "ConfigConfig_Save"
-				then
-					local Value2 = Value
-					local Final = ""
-					--
-					if typeof(Value2) == "Color3" then
-						local hue, sat, val = Value2:ToHSV()
-						--
-						Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, 1)
-					elseif typeof(Value2) == "table" and Value2.Color and Value2.Transparency then
-						local hue, sat, val = Value2.Color:ToHSV()
-						--
-						Final = ("rgb(%s,%s,%s,%s)"):format(hue, sat, val, Value2.Transparency)
-					elseif typeof(Value2) == "table" and Value.Mode then
-						local Values = Value.current
-						--
-						Final = ("key(%s,%s,%s)"):format(Values[1] or "nil", Values[2] or "nil", Value.Mode)
-					elseif Value2 ~= nil then
-						if typeof(Value2) == "boolean" then
-							Value2 = ("bool(%s)"):format(tostring(Value2))
-						elseif typeof(Value2) == "table" then
-							local New = "table("
-							--
-							for Index2, Value3 in pairs(Value2) do
-								New = New .. Value3 .. ","
-							end
-							--
-							if New:sub(#New) == "," then
-								New = New:sub(0, #New - 1)
-							end
-							--
-							Value2 = New .. ")"
-						elseif typeof(Value2) == "string" then
-							Value2 = ("string(%s)"):format(Value2)
-						elseif typeof(Value2) == "number" then
-							Value2 = ("number(%s)"):format(Value2)
-						end
-						--
-						Final = Value2
-					end
-					--
-					Config = Config .. Index .. ": " .. tostring(Final) .. "\n"
-				end
-			end
-			writefile(Library.cheatname..'/'..Library.gamename..'/configs/'..name..Library.fileext, HttpService:JSONEncode(Config))
-		end)
-
-		if s then
-			Library:Notification('Successfully saved config: '..name, 5)
-		else
-			Library:Notification('Error saving config: '..tostring(e)..'. ('..tostring(name)..')', 5)
-		end
+		writefile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. file .. Library.fileext, Library:GetConfig())
 	end
 	--
 	function Library:SetOpen(bool)
@@ -682,133 +649,6 @@ do
 
 		return colorpickertypes, window
 	end
-end
-
-function Library:updateNotificationsPositions(position)
-	for i, v in pairs(Library.Notifications) do 
-		local Position = Vector2.new(20, 20)
-		TweenService:Create(v.Container, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = UDim2.new(0,Position.X,0,Position.Y + (i * 25))}):Play()
-	end 
-end
-
-function Library:Notification(message, duration)
-	local notification = {Container = nil, Objects = {}}
-	--
-	local Position = Vector2.new(20, 20)
-	--
-	local NewNotification = Instance.new("Frame")
-	NewNotification.Name = "NewNotification"
-	NewNotification.AutomaticSize = Enum.AutomaticSize.X
-	NewNotification.Position = UDim2.new(0,20,0,20)
-	NewNotification.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	NewNotification.BackgroundTransparency = 1
-	NewNotification.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	NewNotification.Size = UDim2.fromOffset(0, 20)
-	NewNotification.Parent = Library.ScreenGUI
-	notification.Container = NewNotification
-	--
-	local Outline = Instance.new("Frame")
-	Outline.Name = "Outline"
-	Outline.AnchorPoint = Vector2.new(0, 0)
-	Outline.AutomaticSize = Enum.AutomaticSize.X
-	Outline.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	Outline.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Outline.BorderSizePixel = 1
-	Outline.Position = UDim2.new(0,0,0,0)
-	Outline.Size = UDim2.fromOffset(0, 20)
-	Outline.Visible = true
-	Outline.ZIndex = 50
-	Outline.Parent = NewNotification
-	Outline.BackgroundTransparency = 1
-	--
-	local UICorner = Instance.new("UICorner")
-	UICorner.Name = "UICorner"
-	UICorner.CornerRadius = UDim.new(0, 4)
-	UICorner.Parent = Outline
-	--
-	local UIStroke = Instance.new("UIStroke")
-	UIStroke.Name = "UIStroke"
-	UIStroke.Parent = Outline
-	UIStroke.Transparency = 1
-	--
-	local Inline = Instance.new("Frame")
-	Inline.Name = "Inline"
-	Inline.BackgroundColor3 = Color3.fromRGB(13, 13, 13)
-	Inline.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Inline.BorderSizePixel = 0
-	Inline.Position = UDim2.fromOffset(1, 1)
-	Inline.Size = UDim2.new(1, -2, 1, -2)
-	Inline.ZIndex = 51
-	Inline.BackgroundTransparency = 1
-	--
-	local UICorner2 = Instance.new("UICorner")
-	UICorner2.Name = "UICorner_2"
-	UICorner2.CornerRadius = UDim.new(0, 4)
-	UICorner2.Parent = Inline
-	--
-	local Title = Instance.new("TextLabel")
-	Title.Name = "Title"
-	Title.FontFace = Library.UIFont
-	Title.RichText = true
-	Title.Text = message
-	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Title.TextSize = 13
-	Title.TextXAlignment = Enum.TextXAlignment.Left
-	Title.AutomaticSize = Enum.AutomaticSize.X
-	Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Title.BackgroundTransparency = 1
-	Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Title.BorderSizePixel = 0
-	Title.Position = UDim2.fromOffset(5, 0)
-	Title.Size = UDim2.fromScale(0, 1)
-	Title.Parent = Inline
-	Title.TextTransparency = 1
-	--
-	local UIPadding = Instance.new("UIPadding")
-	UIPadding.Name = "UIPadding"
-	UIPadding.PaddingRight = UDim.new(0, 6)
-	UIPadding.Parent = Inline
-	--
-	Inline.Parent = Outline
-	--
-	function notification:remove()
-		table.remove(Library.Notifications, table.find(Library.Notifications, notification))
-		Library:updateNotificationsPositions(Position)
-		task.wait(0.5)
-		NewNotification:Destroy()
-	end
-	--
-	task.spawn(function()
-		Outline.AnchorPoint = Vector2.new(1,0)
-		for i,v in next, NewNotification:GetDescendants() do
-			if v:IsA("Frame") then
-				TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-			elseif v:IsA("UIStroke") then
-				TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 0}):Play()
-			end
-		end
-		local Tween1 = TweenService:Create(Outline, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {AnchorPoint = Vector2.new(0,0)}):Play()
-		TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-		task.wait(duration)
-		for i,v in next, NewNotification:GetDescendants() do
-			if v:IsA("Frame") then
-				TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
-			elseif v:IsA("UIStroke") then
-				TweenService:Create(v, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Transparency = 1}):Play()
-			end
-		end
-		TweenService:Create(Title, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
-	end)
-	--
-	task.delay(duration + 0.1, function()
-		notification:remove()
-	end)
-	--
-	table.insert(Library.Notifications, notification)
-	Library:updateNotificationsPositions(Position)
-	NewNotification.Position = UDim2.new(0,Position.X,0,Position.Y + (table.find(Library.Notifications, notification) * 25))
-	--
-	return notification
 end
 
 -- // Library Functions
@@ -2687,244 +2527,231 @@ do
 		return Dropdown
 	end
 	--
-	function Sections:Keybind(Options)
-		local Properties = Options or {}
-		local Keybind = {
-			Section = self,
-			Name = Properties.Title or Properties.Name or Properties.title or "Keybind",
-			State = (
-				Properties.state
-					or Properties.State
-					or Properties.def
-					or Properties.Def
-					or Properties.default
-					or Properties.Default
-					or nil
-			),
-			Mode = (Properties.mode or Properties.Mode or "Toggle"),
-			Callback = (
-				Properties.callback
-					or Properties.Callback
-					or Properties.callBack
-					or Properties.CallBack
-					or function() end
-			),
-			Flag = (
-				Properties.flag
-					or Properties.Flag
-					or Properties.pointer
-					or Properties.Pointer
-					or Library.NextFlag()
-			),
-			Binding = nil,
-			Connection = nil,
-		}
-		local Key
-		local State = false
-		local Cycle = Keybind.Mode == "Hold" and 1 or Keybind.Mode == "Toggle" and 2 or 3
+		function Sections:Keybind(Properties)
+			local Properties = Properties or {}
+			local Keybind = {
+				Section = self,
+				Name = Properties.name or Properties.Name or "Keybind",
+				State = (
+					Properties.state
+						or Properties.State
+						or Properties.def
+						or Properties.Def
+						or Properties.default
+						or Properties.Default
+						or Enum.KeyCode.E
+				),
+				Mode = (Properties.mode or Properties.Mode or "Toggle"),
+				UseKey = (Properties.UseKey or false),
+				Callback = (
+					Properties.callback
+						or Properties.Callback
+						or Properties.callBack
+						or Properties.CallBack
+						or function() end
+				),
+				Flag = (
+					Properties.flag
+						or Properties.Flag
+						or Properties.pointer
+						or Properties.Pointer
+						or Library.NextFlag()
+				),
+				Binding = nil,
+			}
+			local Key
+			local State = false
+			--
+			local NewKey = Instance.new("TextButton")
+			NewKey.Name = "NewKey"
+			NewKey.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json")
+			NewKey.Text = ""
+			NewKey.TextColor3 = Color3.fromRGB(0, 0, 0)
+			NewKey.TextSize = 14
+			NewKey.AutoButtonColor = false
+			NewKey.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			NewKey.BackgroundTransparency = 1
+			NewKey.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			NewKey.BorderSizePixel = 0
+			NewKey.Size = UDim2.new(1, 0, 0, 17)
+			NewKey.ZIndex = 54
+			NewKey.Parent = Keybind.Section.Elements.SectionContent
 
-		-- // Instances
-		local Holder = Instance.new('TextButton', Options.Side == "Left" and Keybind.Section.Elements.Left or Options.Side == "Right" and Keybind.Section.Elements.Right or Keybind.Section.Elements.Left)
-		local Title = Instance.new('TextLabel', Holder)
-		local Value = Instance.new('TextLabel', Holder)
-		local Mode = Instance.new('TextLabel', Holder)
-		--
-		-- Inserts
-		table.insert(Library.Instances, Title)
-		table.insert(Library.Instances, Value)
-		table.insert(Library.Instances, Mode)
-		--
-		Holder.Name = "Holder"
-		Holder.Size = UDim2.new(1,0,0,10)
-		Holder.BackgroundColor3 = Color3.new(1,1,1)
-		Holder.BackgroundTransparency = 1
-		Holder.Text = ""
-		Holder.TextColor3 = Color3.new(0,0,0)
-		Holder.AutoButtonColor = false
-		Holder.Font = Enum.Font.SourceSans
-		Holder.TextSize = 14
-		--
-		Title.Name = "Title"
-		Title.Position = UDim2.new(0,15,0,-1)
-		Title.Size = UDim2.new(1,-30,1,0)
-		Title.BackgroundColor3 = Color3.new(1,1,1)
-		Title.BackgroundTransparency = 1
-		Title.TextColor3 = Color3.new(0.3059,0.3059,0.3059)
-		Title.FontFace = Library.UIFont
-		Title.TextSize = Library.FontSize
-		Title.ZIndex = 105
-		Title.TextXAlignment = Enum.TextXAlignment.Left
-		Title.Text = Keybind.Name
-		--
-		Value.Name = "Value"
-		Value.Position = UDim2.new(0,15,0,-1)
-		Value.Size = UDim2.new(1,-30,1,0)
-		Value.BackgroundColor3 = Color3.new(1,1,1)
-		Value.BackgroundTransparency = 1
-		Value.Text = "[-]"
-		Value.TextColor3 = Color3.new(0.3059,0.3059,0.3059)
-		Value.FontFace = Library.UIFont
-		Value.TextSize = Library.FontSize
-		Value.ZIndex = 105
-		Value.TextXAlignment = Enum.TextXAlignment.Right
-		--
-		Mode.Name = "Mode"
-		Mode.Position = UDim2.new(0,Title.TextBounds.X + 20,0,-1)
-		Mode.Size = UDim2.new(1,-30,1,0)
-		Mode.BackgroundColor3 = Color3.new(1,1,1)
-		Mode.BackgroundTransparency = 1
-		Mode.Text = Keybind.Mode == "Hold" and "[H]" or Keybind.Mode == "Toggle" and "[T]" or "[A]"
-		Mode.TextColor3 = Color3.new(1,1,1)
-		Mode.FontFace = Library.UIFont
-		Mode.TextSize = Library.FontSize
-		Mode.ZIndex = 105
-		Mode.TextXAlignment = Enum.TextXAlignment.Left
+			local ToggleTitle = Instance.new("TextLabel")
+			ToggleTitle.Name = "ToggleTitle"
+			ToggleTitle.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json")
+			ToggleTitle.Text = Keybind.Name
+			ToggleTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+			ToggleTitle.TextSize = 13
+			ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+			ToggleTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			ToggleTitle.BackgroundTransparency = 1
+			ToggleTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			ToggleTitle.BorderSizePixel = 0
+			ToggleTitle.Size = UDim2.new(1, -10, 0, 17)
+			ToggleTitle.Parent = NewKey
 
-		-- // Connections
-		local function set(newkey)
-			if string.find(tostring(newkey), "Enum") then
-				if Keybind.Connection then
-					Keybind.Connection:Disconnect()
-					if Keybind.Flag then
-						Library.Flags[Keybind.Flag] = false
+			local KeyText = Instance.new("TextLabel")
+			KeyText.Name = "KeyText"
+			KeyText.FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json")
+			KeyText.Text = "None"
+			KeyText.TextColor3 = Color3.fromRGB(200, 200, 200)
+			KeyText.TextSize = 13
+			KeyText.TextXAlignment = Enum.TextXAlignment.Right
+			KeyText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			KeyText.BackgroundTransparency = 1
+			KeyText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			KeyText.BorderSizePixel = 0
+			KeyText.Position = UDim2.new(1, -180, 0, 0)
+			KeyText.Size = UDim2.new(1, -10, 0, 17)
+			KeyText.Parent = NewKey
+
+			-- // Functions
+			local function set(newkey)
+				if string.find(tostring(newkey), "Enum") then
+					if c then
+						c:Disconnect()
+						if Keybind.Flag then
+							Library.Flags[Keybind.Flag] = false
+						end
+						Keybind.Callback(false)
 					end
-					Keybind.Callback(false)
-				end
-				if tostring(newkey):find("Enum.KeyCode.") then
-					newkey = Enum.KeyCode[tostring(newkey):gsub("Enum.KeyCode.", "")]
-				elseif tostring(newkey):find("Enum.UserInputType.") then
-					newkey = Enum.UserInputType[tostring(newkey):gsub("Enum.UserInputType.", "")]
-				end
-				if newkey == Enum.KeyCode.Backspace then
-					Key = nil
-
-					Value.Text = "[-]"
-				elseif newkey ~= nil then
-					Key = newkey
-
-					local text = (Library.Keys[newkey] or tostring(newkey):gsub("Enum.KeyCode.", ""))
-
-					Value.Text = "[" .. text .. "]"
-				end
-
-				Library.Flags[Keybind.Flag .. "_KEY"] = newkey
-			elseif table.find({ "Always", "Toggle", "Hold" }, newkey) then
-				Library.Flags[Keybind.Flag .. "_KEY STATE"] = newkey
-				Keybind.Mode = newkey
-				Mode.Text = Keybind.Mode == "Hold" and "[H]" or Keybind.Mode == "Toggle" and "[T]" or "[A]"
-				Cycle = Keybind.Mode == "Hold" and 1 or Keybind.Mode == "Toggle" and 2 or 3
-				if Keybind.Mode == "Always" then
-					State = true
-					if Keybind.Flag then
-						Library.Flags[Keybind.Flag] = State
+					if tostring(newkey):find("Enum.KeyCode.") then
+						newkey = Enum.KeyCode[tostring(newkey):gsub("Enum.KeyCode.", "")]
+					elseif tostring(newkey):find("Enum.UserInputType.") then
+						newkey = Enum.UserInputType[tostring(newkey):gsub("Enum.UserInputType.", "")]
 					end
-					Keybind.Callback(true)
-				end
-			else
-				State = newkey
-				if Keybind.Flag then
-					Library.Flags[Keybind.Flag] = newkey
-				end
-				Keybind.Callback(newkey)
-			end
-		end
-		--
-		set(Keybind.State)
-		set(Keybind.Mode)
-		Holder.MouseButton1Click:Connect(function()
-			if not Keybind.Binding then
+					if newkey == Enum.KeyCode.Backspace then
+						Key = nil
+						if Keybind.UseKey then
+							if Keybind.Flag then
+								Library.Flags[Keybind.Flag] = Key
+							end
+							Keybind.Callback(Key)
+						end
+						local text = "None"
 
-				Value.Text = "[-]"
+						KeyText.Text = text
+					elseif newkey ~= nil then
+						Key = newkey
+						if Keybind.UseKey then
+							if Keybind.Flag then
+								Library.Flags[Keybind.Flag] = Key
+							end
+							Keybind.Callback(Key)
+						end
+						local text = (Library.Keys[newkey] or tostring(newkey):gsub("Enum.KeyCode.", ""))
 
-				Keybind.Binding = Library:Connection(
-					UserInputService.InputBegan,
-					function(input, gpe)
-						set(
-							input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode
-								or input.UserInputType
-						)
-						Library:Disconnect(Keybind.Binding)
-						task.wait()
-						Keybind.Binding = nil
+						KeyText.Text = text
 					end
-				)
-			end
-		end)
-		--
-		Library:Connection(UserInputService.InputBegan, function(inp)
-			if (inp.KeyCode == Key or inp.UserInputType == Key) and not Keybind.Binding then
-				if Keybind.Mode == "Hold" then
-					if Keybind.Flag then
-						Library.Flags[Keybind.Flag] = true
-					end
-					Keybind.Connection = Library:Connection(TweenService.RenderStepped, function()
-						if Keybind.Callback then
+
+					Library.Flags[Keybind.Flag .. "_KEY"] = newkey
+				elseif table.find({ "Always", "Toggle", "Hold" }, newkey) then
+					if not Keybind.UseKey then
+						Library.Flags[Keybind.Flag .. "_KEY STATE"] = newkey
+						Keybind.Mode = newkey
+						if Keybind.Mode == "Always" then
+							State = true
+							if Keybind.Flag then
+								Library.Flags[Keybind.Flag] = State
+							end
 							Keybind.Callback(true)
 						end
-					end)
-				elseif Keybind.Mode == "Toggle" then
-					State = not State
-					if Keybind.Flag then
-						Library.Flags[Keybind.Flag] = State
 					end
-					Keybind.Callback(State)
+				else
+					State = newkey
+					if Keybind.Flag then
+						Library.Flags[Keybind.Flag] = newkey
+					end
+					Keybind.Callback(newkey)
 				end
 			end
-		end)
-		--
-		Library:Connection(UserInputService.InputEnded, function(inp)
-			if Keybind.Mode == "Hold" then
-				if Key ~= "" or Key ~= nil then
-					if inp.KeyCode == Key or inp.UserInputType == Key then
-						if Keybind.Connection then
-							Keybind.Connection:Disconnect()
-							if Keybind.Flag then
-								Library.Flags[Keybind.Flag] = false
-							end
+			--
+			set(Keybind.State)
+			set(Keybind.Mode)
+			NewKey.MouseButton1Click:Connect(function()
+				if not Keybind.Binding then
+
+					KeyText.Text = "..."
+					TweenService:Create(KeyText, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255,255,255)}):Play()
+
+
+					Keybind.Binding = Library:Connection(
+						UserInputService.InputBegan,
+						function(input, gpe)
+							if gpe then return end; 
+							if input.UserInputType == Enum.UserInputType.Touch then return end;
+
+
+							set(
+								input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode
+									or input.UserInputType
+							)
+							Library:Disconnect(Keybind.Binding)
+							task.wait()
+							Keybind.Binding = nil
+							TweenService:Create(KeyText, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
+						end
+					)
+				end
+			end)
+			--
+			Library:Connection(UserInputService.InputBegan, function(inp, gpe)
+				if (gpe) then return end;
+
+				if (inp.KeyCode == Key or inp.UserInputType == Key) and not Keybind.Binding and not Keybind.UseKey then
+					if Keybind.Mode == "Hold" then
+						if Keybind.Flag then
+							Library.Flags[Keybind.Flag] = true
+						end
+						c = Library:Connection(game:GetService("RunService").RenderStepped, function()
 							if Keybind.Callback then
-								Keybind.Callback(false)
+								Keybind.Callback(true)
+							end
+						end)
+					elseif Keybind.Mode == "Toggle" then
+						State = not State
+						if Keybind.Flag then
+							Library.Flags[Keybind.Flag] = State
+						end
+						Keybind.Callback(State)
+					end
+				end
+			end)
+			--
+			Library:Connection(UserInputService.InputEnded, function(inp, gpe)
+				if gpe then return end;
+
+				if Keybind.Mode == "Hold" and not Keybind.UseKey then
+					if Key ~= "" or Key ~= nil then
+						if inp.KeyCode == Key or inp.UserInputType == Key then
+							if c then
+								c:Disconnect()
+								if Keybind.Flag then
+									Library.Flags[Keybind.Flag] = false
+								end
+								if Keybind.Callback then
+									Keybind.Callback(false)
+								end
 							end
 						end
 					end
 				end
+			end)
+			--
+			Library.Flags[Keybind.Flag .. "_KEY"] = Keybind.State
+			Library.Flags[Keybind.Flag .. "_KEY STATE"] = Keybind.Mode
+			Flags[Keybind.Flag] = set
+			Flags[Keybind.Flag .. "_KEY"] = set
+			Flags[Keybind.Flag .. "_KEY STATE"] = set
+			--
+			function Keybind:Set(key)
+				set(key)
 			end
-		end)
-		--
-		Holder.MouseButton2Click:Connect(function()
-			Cycle += 1
-			if Cycle > 3 then
-				Cycle = 1
-				set("Hold")
-				Mode.Text = "[H]"
-			elseif Cycle == 2 then
-				set("Toggle")
-				Mode.Text = "[T]"
-			elseif Cycle == 3 then
-				set("Always")
-				Mode.Text = "[A]"
-			elseif Cycle == 1 then
-				set("Hold")
-				Mode.Text = "[H]"
-			end
-		end)
-		--
-		Library.Flags[Keybind.Flag .. "_KEY"] = Keybind.State
-		Library.Flags[Keybind.Flag .. "_KEY STATE"] = Keybind.Mode
-		Flags[Keybind.Flag] = set
-		Flags[Keybind.Flag .. "_KEY"] = set
-		Flags[Keybind.Flag .. "_KEY STATE"] = set
-		--
-		function Keybind:Set(key)
-			set(key)
+
+			-- // Returning
+			return Keybind
 		end
-		local function refresh()
-			wait(0.001)
-			Mode.Position = UDim2.new(0,Title.TextBounds.X + 20,0,-1)
-		end
-		-- // Return
-		refresh()
-		return Keybind
-	end
 	--
 	function Sections:Textbox(Options)
 		local Properties = Options or {}
@@ -3031,11 +2858,12 @@ do
 		return Textbox
 	end
 	--
-	function Library:Panel(Properties)
+	function Library:Panel(Options)
 		if Library.__panel == true then return end
 	
 		Library.__panel = true 
 	
+		local Properties = Options or {}
 		local Panel = {
 			Name = Properties.name or Properties.Name or "Are you sure?", 
 			Options = Properties.options or Properties.Options or {"Confirm", "Discard"},
@@ -3117,7 +2945,7 @@ do
 		aimbot.AnchorPoint = Vector2.new(0.5, 0)
 		aimbot.TextSize = 12
 		aimbot.Size = UDim2.new(0, 0, 0, 11)
-		aimbot.TextColor3 = Color3.fromRGB(170, 170, 170)
+		aimbot.TextColor3 = Color3.fromRGB(224, 224, 224)
 		aimbot.BorderColor3 = Color3.fromRGB(0, 0, 0)
 		aimbot.Text = Panel.Name
 		aimbot.BackgroundTransparency = 1
@@ -3172,7 +3000,7 @@ do
 			button.Parent = button_inline
 			button.Name = ""
 			button.FontFace = Library.UIFont
-			button.TextColor3 = Color3.fromRGB(170, 170, 170)
+			button.TextColor3 = Color3.fromRGB(224, 224, 224)
 			button.BorderColor3 = Color3.fromRGB(56, 56, 56)
 			button.Text = v
 			button.TextStrokeTransparency = 0.5
@@ -3354,116 +3182,141 @@ do
 		-- // Returning
 		return Colorpicker
 	end
-end
+	--
+	function Library:Configs(tab)
+		local cfgs = tab:Section({Name = "Config", LeftTitle = 'Main', RightTitle = 'Other'})
+		local window = tab:Section({Name = "Window", LeftTitle = 'Main', RightTitle = 'Other'})
 
-function Library:Configs(tab)
-	local cfgs = tab:Section({Name = "Config", LeftTitle = 'Main', RightTitle = 'Other'})
-	local window = tab:Section({Name = "Window", LeftTitle = 'Main', RightTitle = 'Other'})
-	--
-	local cfg_list = cfgs:List({Name = "Config List", Flag = "setting_configuration_list", Options = {}})
-	cfgs:Textbox({Flag = "settings_configuration_name", Placeholder = "Config name"})
-	--
-	cfgs:Button({Name = "Create", Callback = function()
-		local config_name = Library.Flags.settings_configuration_name
-		if config_name == "" or isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. config_name .. Library.fileext) then
-			return
-		end
+		local cfg_list = cfgs:List({Name = "Config List", Flag = "setting_configuration_list", Options = {}})
+		cfgs:Textbox({Flag = "settings_configuration_name", Placeholder = "Config name"})
 		
-		writefile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. config_name .. Library.fileext, HttpService:JSONEncode({}))
-		cfg_list:Refresh(Library:GetConfigs())
-	end})
-	--
-	cfgs:Button({Name = "Save", Callback = function()
-		local selected_config = Library.Flags.setting_configuration_list
-		if selected_config then
+		local current_list = {}
+
+		local function update_config_list()
+			local list = {}
+		
+			for idx, file in listfiles(Library.cheatname..'/'..Library.gamename.."/configs") do
+				local file_name = file:match("([^\\/]+)$"):gsub(Library.fileext, "")
+				list[#list + 1] = file_name
+			end				
+		
+			local is_new = #list ~= #current_list
+		
+			if not is_new then
+				for idx = 1, #list do
+					if list[idx] ~= current_list[idx] then
+						is_new = true
+						break
+					end
+				end
+			end
+		
+			if is_new then
+				current_list = list
+				cfg_list:Refresh(current_list)
+			end
+		end
+
+		cfgs:Button({Name = "Create", Callback = function()
+			local config_name = Library.Flags.settings_configuration_name
+			if config_name == "" or isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. config_name .. Library.fileext) then
+				return
+			end
+			
+			writefile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. config_name .. Library.fileext, Library:GetConfig())
+			update_config_list()
+		end})
+
+		cfgs:Button({Name = "Save", Callback = function()
+			local selected_config = Library.Flags.setting_configuration_list
+			if selected_config then
+				Library:Panel({
+					Name = "Are you sure you want to save the config '".. selected_config .."' ?",
+					Options = {"Yes", "No"},
+					Callback = function(option)
+						if option == "Yes" then 
+							Library:SaveConfig(selected_config)
+						end 
+					end
+				})
+			end
+		end})
+
+		cfgs:Button({Name = "Load", Callback = function()
+			local selected_config = Library.Flags.setting_configuration_list
+			if selected_config then
+				if isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext) then
+					Library:LoadConfig(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext)
+				end
+			end
+		end})
+
+		cfgs:Button({Name = 'Delete', Callback = function()
+			local selected_config = Library.Flags.setting_configuration_list
 			Library:Panel({
-				Name = "Are you sure you want to save the config '".. selected_config .."' ?",
+				Name = "Are you sure you want to delete the config '".. selected_config .."' ?",
 				Options = {"Yes", "No"},
 				Callback = function(option)
 					if option == "Yes" then 
-						Library:SaveConfig(selected_config)
+						if isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext) then
+							delfile(Library.cheatname..'/'..Library.gamename..'/configs/'..selected_config.. Library.fileext)
+						end
+						update_config_list()
 					end 
 				end
 			})
-		end
-	end})
-	--
-	cfgs:Button({Name = "Load", Callback = function()
-		local selected_config = Library.Flags.setting_configuration_list
-		if selected_config then
-			if isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext) then
-				Library:LoadConfig(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext)
-			end
-		end
-	end})
-	--
-	cfgs:Button({Name = 'Delete', Callback = function()
-		local selected_config = Library.Flags.setting_configuration_list
-        Library:Panel({
-            Name = "Are you sure you want to delete the config '".. selected_config .."' ?",
-            Options = {"Yes", "No"},
-            Callback = function(option)
-                if option == "Yes" then 
-                    if isfile(Library.cheatname..'/'..Library.gamename.."/configs".."/" .. selected_config .. Library.fileext) then
-                        delfile(Library.cheatname..'/'..Library.gamename..'/configs/'..selected_config.. Library.fileext)
-                    end
-					cfg_list:Refresh(Library:GetConfigs())
-                end 
-            end
-        })
-    end})
-	--
-	cfgs:Button({Name = "Refresh", Callback = function()
-		cfg_list:Refresh(Library:GetConfigs())
-	end})
-	--
-	cfg_list:Refresh(Library:GetConfigs())
-	--
-	window:Colorpicker({Name = "Menu Accent", Flag = "MenuAccent", Default = Library.Accent, Callback = function(state)
-		Library:ChangeAccent(state)
-	end})
-	--
-	window:Button({Name = "Rejoin Server", Callback = function()
-		Library:Panel({
-            Name = "Are you sure you want to rejoin the game ?",
-            Options = {"Yes", "No"},
-            Callback = function(option)
-                if option == "Yes" then 
-					LocalPlayer:Kick('['..Library.cheatname..']'..' Rejoining Server')
-					TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId);
-                end 
-            end
-        })
-	end})
-	--
-	window:Button({Name = "Rejoin Game", Callback = function()
-		Library:Panel({
-            Name = "Are you sure you want to rejoin the server ?",
-            Options = {"Yes", "No"},
-            Callback = function(option)
-                if option == "Yes" then 
-					LocalPlayer:Kick('['..Library.cheatname..']'..' Rejoining Game')
-					TeleportService:Teleport(game.PlaceId);
-                end 
-            end
-        })
-	end})
-	--
-	window:Button({Name = "Remove Voice Chat Ban", Callback = function()
-		VoiceChatService:joinVoice()
-	end})
-	--
-	window:Button({Name = "Unload", Callback = function()
-		Library:Panel({
-            Name = "Are you sure you want to unload the cheat ?",
-            Options = {"Yes", "No"},
-            Callback = function(option)
-                if option == "Yes" then 
-					Library:Unload()
-                end 
-            end
-        })
-	end})
+		end})
+
+		cfgs:Button({Name = "Refresh", Callback = function()
+			update_config_list()
+		end})
+		--
+		window:Colorpicker({Name = "Menu Accent", Flag = "MenuAccent", Default = Library.Accent, Callback = function(state)
+			Library:ChangeAccent(state)
+		end})
+		--
+		window:Button({Name = "Rejoin Server", Callback = function()
+			Library:Panel({
+				Name = "Are you sure you want to rejoin the game ?",
+				Options = {"Yes", "No"},
+				Callback = function(option)
+					if option == "Yes" then 
+						LocalPlayer:Kick('['..Library.cheatname..']'..' Rejoining Server')
+						TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId);
+					end 
+				end
+			})
+		end})
+		--
+		window:Button({Name = "Rejoin Game", Callback = function()
+			Library:Panel({
+				Name = "Are you sure you want to rejoin the server ?",
+				Options = {"Yes", "No"},
+				Callback = function(option)
+					if option == "Yes" then 
+						LocalPlayer:Kick('['..Library.cheatname..']'..' Rejoining Game')
+						TeleportService:Teleport(game.PlaceId);
+					end 
+				end
+			})
+		end})
+		--
+		window:Keybind({Name = "UI Toggle", Flag = "ui_toggle", Default = Enum.KeyCode.Insert, UseKey = true, Callback = function(key)
+			Library.UIKey = key;
+		end})
+		--
+		window:Button({Name = "Unload", Callback = function()
+			Library:Panel({
+				Name = "Are you sure you want to unload the cheat ?",
+				Options = {"Yes", "No"},
+				Callback = function(option)
+					if option == "Yes" then 
+						Library:Unload()
+					end 
+				end
+			})
+		end})
+	end
 end
 
 getgenv().init = Library

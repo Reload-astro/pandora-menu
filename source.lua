@@ -174,7 +174,7 @@ do
 		NewInd.Size = UDim2.fromOffset(0, 20)
 		NewInd.Parent = Library.ScreenGui
 		notification.Container = NewInd
-
+		--
 		local Outline = Instance.new("Frame")
 		Outline.Name = "Outline"
 		Outline.AnchorPoint = Vector2.new(0, 0)
@@ -230,6 +230,7 @@ do
 		Title.Position = UDim2.fromOffset(5, 0)
 		Title.Size = UDim2.fromScale(0, 1)
 		Title.Parent = Inline
+		Title.ZIndex = 9999
 		Title.TextTransparency = 1
 
 		local UIPadding = Instance.new("UIPadding")
